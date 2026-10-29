@@ -25,6 +25,7 @@ import com.highcapable.betterandroid.system.extension.utils.AndroidVersion
 import com.highcapable.kavaref.resolver.processor.MemberProcessor
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import java.lang.reflect.Constructor
+import java.lang.reflect.Field
 import java.lang.reflect.Method
 
 /**
@@ -33,6 +34,11 @@ import java.lang.reflect.Method
  * Implemented with [AndroidHiddenApiBypass](https://github.com/LSPosed/AndroidHiddenApiBypass).
  */
 internal class HiddenApiBypassResolver : MemberProcessor.Resolver() {
+
+    override fun <T : Any> getDeclaredFields(declaringClass: Class<T>): List<Field> =
+        AndroidVersion.require(AndroidVersion.P, super.getDeclaredFields(declaringClass)) {
+            HiddenApiBypass.getStaticFields(declaringClass) + HiddenApiBypass.getInstanceFields(declaringClass)
+        }
 
     override fun <T : Any> getDeclaredConstructors(declaringClass: Class<T>): List<Constructor<T>> =
         AndroidVersion.require(AndroidVersion.P, super.getDeclaredConstructors(declaringClass)) {
