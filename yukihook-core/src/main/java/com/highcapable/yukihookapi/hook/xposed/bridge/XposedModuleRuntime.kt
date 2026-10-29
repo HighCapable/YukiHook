@@ -35,6 +35,7 @@ import com.highcapable.yukihookapi.hook.param.context.PackageContext
 import com.highcapable.yukihookapi.hook.xposed.YukiHookXposedModule
 import com.highcapable.yukihookapi.hook.xposed.bridge.component.HookRegistration
 import com.highcapable.yukihookapi.hook.xposed.bridge.component.PackageRegistration
+import com.highcapable.yukihookapi.hook.xposed.bridge.component.ParcelCreatorCache
 import com.highcapable.yukihookapi.hook.xposed.bridge.component.RetainedValuesStore
 import com.highcapable.yukihookapi.hook.xposed.bridge.event.ModuleEventDispatcher
 import com.highcapable.yukihookapi.hook.xposed.bridge.lifecycle.XposedModuleLifecycle
@@ -297,6 +298,8 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
         ModuleLifecycleManager.register(RetainedValuesStore.RELOAD_ID, retainedValues)
         ModuleLifecycleManager.register(AppParasitism.RELOAD_ID, AppParasitism)
         ModuleLifecycleManager.register(YukiHookDataChannel.RELOAD_ID, YukiHookDataChannel)
+        // Disposed after the data channel stops receiving, so no later read adds the class loaders back.
+        ModuleLifecycleManager.register(ParcelCreatorCache.RELOAD_ID, ParcelCreatorCache)
     }
 
     private fun dispatchPackage(context: PackageContext) {
