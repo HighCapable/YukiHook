@@ -84,6 +84,12 @@ On Android 11 and above, YukiHook uses `ResourcesLoader` to dynamically load mod
 Below Android 11, after injecting module resources, the [Module Hot Reload](./hot-reload.md) feature will no longer be supported
 because the module resources have been loaded into the host through `addAssetPath`.
 
+Only inject module resources into the host's own `Context` or `Resources`, do not inject them into the `Context` of other apps,
+such as a `Context` obtained through `createPackageContext` or the `Context` used by notification `RemoteViews`.
+After these apps are updated, their original APK paths no longer exist, the system cannot rebuild these `Resources` during module hot reload,
+and reloading module resources will fail.
+If you only need to read the resources of the module, please refer to [Use Module Resources](#use-module-resources).
+
 :::
 
 ## Register Module Activity

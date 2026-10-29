@@ -82,6 +82,10 @@ registerAppLifecycle {
 
 低于 Android 11 的系统中注入模块资源后将不再支持 [模块热重载](./hot-reload.md) 功能，因为模块资源已经通过 `addAssetPath` 的方式加载到宿主中。
 
+请只向宿主自身的 `Context` 或 `Resources` 注入模块资源，不要向其他应用的 `Context` 注入，例如通过 `createPackageContext` 得到的 `Context`
+或通知 `RemoteViews` 中的 `Context`。这些应用更新后，它们原有的 APK 路径将不再存在，模块热重载时系统无法重建这些
+`Resources`，会导致模块资源重载失败。如果你只需要读取模块中的资源，请参考 [使用模块资源](#使用模块资源)。
+
 :::
 
 ## 注册模块 Activity
