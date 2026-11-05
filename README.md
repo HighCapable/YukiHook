@@ -93,6 +93,16 @@ In the opened page, select the **Quick Start** section in the sidebar to continu
 
 Migrating from other Hook APIs? Please read [Migration to YukiHook](https://highcapable.github.io/YukiHook/en/config/migration).
 
+### Agent Skills
+
+For AI-assisted development with Claude Code, Codex, and other agents, install the [YukiHook skill](skills/yukihook/SKILL.md).
+
+> The following example
+
+```bash
+npx skills add HighCapable/YukiHook --skill yukihook
+```
+
 ## Exploring New Version
 
 YukiHook `2.x` is being rebuilt on the `2.x` branch, you can click [here](https://github.com/HighCapable/YukiHook/tree/2.x) to follow its development

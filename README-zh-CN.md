@@ -90,6 +90,16 @@ object HookEntry : YukiHookXposedModule {
 
 从其他 Hook API 迁移而来吗？请阅读 [迁移至 YukiHook](https://highcapable.github.io/YukiHook/zh-cn/config/migration)。
 
+### Agent Skills
+
+使用 Claude Code、Codex 等智能体辅助开发时，可安装 [YukiHook 使用技能](skills/yukihook/SKILL.md)。
+
+> 示例如下
+
+```bash
+npx skills add HighCapable/YukiHook --skill yukihook
+```
+
 ## 探索新版本
 
 YukiHook `2.x` 版本正在 `2.x` 分支中重构，你可以点击 [这里](https://github.com/HighCapable/YukiHook/tree/2.x) 关注它的开发进度。
