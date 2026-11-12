@@ -45,7 +45,7 @@ YukiHook is now split into multiple modules, and you need to add a base module t
 | `com.highcapable.yukihookapi:ksp-xposed` | [yukihook-compiler](../library/yukihook-compiler.md)                                                                                           |
 | `de.robv.android.xposed:api`             | [yukihook-runtime-xposed82](../library/yukihook-runtime-xposed82.md) or [yukihook-runtime-libxposed](../library/yukihook-runtime-libxposed.md) |
 
-If you want to keep exactly the same runtime environment as before, choose `yukihook-runtime-xposed82`.
+If you want to keep exactly the same runtime environment as before, choose [yukihook-runtime-xposed82](../library/yukihook-runtime-xposed82.md).
 If your target hook framework supports the libxposed API (such as LSPosed), we recommend using [yukihook-runtime-libxposed](../library/yukihook-runtime-libxposed.md).
 
 If you want to be compatible with multiple base modules at the same time, please refer to [Multi-Entry Variants](../library/yukihook-core/hook-entry/multi-entry-variants.md).

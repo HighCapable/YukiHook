@@ -41,7 +41,7 @@ YukiHook 现在被拆分为多个模块，你需要引入一个底座模块来�
 | `com.highcapable.yukihookapi:ksp-xposed` | [yukihook-compiler](../library/yukihook-compiler.md)                                                                                           |
 | `de.robv.android.xposed:api`             | [yukihook-runtime-xposed82](../library/yukihook-runtime-xposed82.md) 或 [yukihook-runtime-libxposed](../library/yukihook-runtime-libxposed.md) |
 
-如果你希望保持与之前完全一致的运行环境，请选择 `yukihook-runtime-xposed82`，如果你的目标 Hook 框架支持 libxposed API (例如 LSPosed)，推荐使用 [yukihook-runtime-libxposed](../library/yukihook-runtime-libxposed.md)。
+如果你希望保持与之前完全一致的运行环境，请选择 [yukihook-runtime-xposed82](../library/yukihook-runtime-xposed82.md)，如果你的目标 Hook 框架支持 libxposed API (例如 LSPosed)，推荐使用 [yukihook-runtime-libxposed](../library/yukihook-runtime-libxposed.md)。
 
 如果你希望同时兼容多个底座，请参考 [多入口变体](../library/yukihook-core/hook-entry/multi-entry-variants.md)。
 
