@@ -25,6 +25,7 @@ import android.os.Bundle
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.MenuItem
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.updateMargins
@@ -186,33 +187,36 @@ class MainActivity : BaseActivity() {
                                 lparams = LayoutParams(widthMatchParent = true)
                             ) {
                                 editText = TextInputEditText(
+                                    id = "preferences_input",
                                     lparams = LayoutParams(widthMatchParent = true)
                                 ) {
                                     hint = stringResource(R.string.demo_enter_text)
                                     isSingleLine = true
                                     textSize = 18f
-                                    hostEnvironment { isEnabled = false }
-                                    updateText(
-                                        preferences().get(
-                                            DataConst.TEST_KV_DATA,
-                                            stringResource(R.string.demo_test_data_default)
-                                        )
-                                    )
+                                    isEnabled = false
                                 }
                             }
                         }
                         Button(
+                            id = "preferences_save",
                             lparams = LayoutParams {
                                 bottomMargin = 15.dp
                             }
                         ) {
                             text = stringResource(R.string.demo_save_test_data)
-                            hostEnvironment { isEnabled = false }
+                            isEnabled = false
                             setOnClickListener { _ ->
                                 moduleEnvironment {
                                     if (editText.textToString().isNotEmpty()) {
-                                        preferences().edit { put(DataConst.TEST_KV_DATA, editText.textToString()) }
-                                        toast(stringResource(R.string.demo_saved))
+                                        runCatching {
+                                            preferences().edit { put(DataConst.TEST_KV_DATA, editText.textToString()) }
+                                        }.onSuccess {
+                                            toast(stringResource(R.string.demo_saved))
+                                        }.onFailure {
+                                            editText.isEnabled = false
+                                            isEnabled = false
+                                            toast(it.message.orEmpty())
+                                        }
                                     } else toast(stringResource(R.string.demo_enter_text))
                                 }
                             }
@@ -245,6 +249,18 @@ class MainActivity : BaseActivity() {
             view.setInsetsPadding(insetsWrapper.safeDrawing)
         }
 
+        fun refreshPreferences(available: Boolean = true) {
+            val value = if (available) runCatching {
+                preferences().get(DataConst.TEST_KV_DATA, getString(R.string.demo_test_data_default))
+            }.getOrNull() else null
+            val writable = value != null && !YukiHook.Status.isHostEnvironment
+            hikage.get<EditText>("preferences_input").apply {
+                isEnabled = writable
+                if (value != null) updateText(value)
+            }
+            hikage.get<TextView>("preferences_save").isEnabled = writable
+        }
+
         fun refreshStatus() {
             hikage.get<TextView>("sample_title_text_0").text = getString(R.string.demo_status_module_active, YukiHook.Status.isModuleActive)
             hikage.get<TextView>("sample_subtitle_text_0").text = getString(R.string.demo_status_module_active_summary)
@@ -264,10 +280,12 @@ class MainActivity : BaseActivity() {
 
         moduleEnvironment {
             YukiHook.Status.observeFrameworkService(lifecycle) { available ->
-                if (available) refreshStatus()
+                refreshPreferences(available)
+                refreshStatus()
             }
         }
 
+        hostEnvironment { refreshPreferences() }
         refreshStatus()
     }
 

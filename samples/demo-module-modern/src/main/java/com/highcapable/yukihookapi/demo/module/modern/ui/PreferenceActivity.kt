@@ -31,7 +31,6 @@ import com.highcapable.betterandroid.ui.extension.component.replace
 import com.highcapable.hikage.core.layout.LayoutParams
 import com.highcapable.hikage.extension.addView
 import com.highcapable.hikage.widget.android.widget.FrameLayout
-import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.demo.module.modern.R
 import com.highcapable.yukihookapi.demo.module.modern.ui.base.BaseActivity
 import com.highcapable.yukihookapi.hook.xposed.preference.ui.ModulePreferenceFragment
@@ -69,11 +68,9 @@ class PreferenceActivity : BaseActivity() {
 
     class SettingsFragment : ModulePreferenceFragment() {
 
-        override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-            super.onCreatePreferences(savedInstanceState, rootKey)
-
+        override fun onPreferencesReady(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.settings_preferences, rootKey)
-            findPreference<SwitchPreference>("show_dialog_when_demo_app_opened")?.isEnabled = !YukiHook.Status.isHostEnvironment
+            findPreference<SwitchPreference>("show_dialog_when_demo_app_opened")?.isEnabled = isWritable
         }
     }
 }
