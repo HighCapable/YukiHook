@@ -210,6 +210,7 @@ class PackageParamDetector : Detector(), Detector.UastScanner {
             val arguments = source.valueArgumentList ?: return
             val method = node.resolve() ?: return
             if (method.containingClass?.qualifiedName?.substringBeforeLast('.') != KAVAREF_EXTENSION_PACKAGE_NAME) return
+            if (method.parameterList.parameters.none { it.name == LOADER_PARAMETER }) return
             if (!source.hasPackageParamReceiver()) return
 
             val loader = node.loaderArgument(method)

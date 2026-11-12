@@ -139,7 +139,8 @@ class KavaRefFallbackDetector : Detector(), Detector.UastScanner {
                 val className = containingClass?.qualifiedName ?: return false
                 return when (methodName) {
                     in VARIOUS_CLASS_LOADING_FUNCTIONS -> className == VARIOUS_CLASS
-                    else -> className.substringBeforeLast('.') == KAVAREF_EXTENSION_PACKAGE_NAME
+                    else -> className.substringBeforeLast('.') == KAVAREF_EXTENSION_PACKAGE_NAME &&
+                        parameterList.parameters.any { it.name == LOADER_PARAMETER }
                 }
             }
 
