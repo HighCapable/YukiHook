@@ -15,9 +15,15 @@ YukiHook uses the `XSharedPreferences` solution in modules built with the [yukih
 
 ::: warning
 
-In modules using the [yukihook-runtime-xposed82](../yukihook-runtime-xposed82.md) base module,
-it is recommended to use it after observing the availability of the framework service,
-for details please refer to [Module Status → Hook Framework Service Status](./module-status.md#hook-framework-service-status).
+In modules using the [yukihook-runtime-libxposed](../yukihook-runtime-libxposed.md) base module, it is recommended to observe framework service availability before use.
+See [Module Status → Hook Framework Service Status](./module-status.md#hook-framework-service-status).
+
+:::
+
+::: danger
+
+Starting with `1.5.1`, when the storage solution provided by the hook framework is unavailable, preferences no longer fall back to private storage for reads and writes.
+Instead, an exception is thrown. You need to explicitly check `isAvailable` to determine whether preferences are currently available.
 
 :::
 
@@ -44,6 +50,8 @@ The project is no longer updated. If you are using it on old devices, YukiHook s
 For hook frameworks that are not listed, as long as they are implemented according to the API specification provided by the base module, YukiHook still chooses a suitable storage solution based on the base module type.
 
 ## Basic Usage
+
+Before use, check `isAvailable` to determine whether preferences are currently available, and `isWritable` to determine whether they are writable in the current environment.
 
 When storing preferences in the module, if you are in a place with a `Context` such as an `Activity`, you can use the following.
 
@@ -108,11 +116,9 @@ preferences().edit()
     .apply()
 ```
 
-::: warning
+::: danger
 
-The preferences of the module are read-only in hosts, changes made in a host are ignored.
-
-You can use `isAvailable` to check whether the current storage is available, and `isWritable` to check whether it is writable.
+Module preferences are read-only in hosts. Attempting to modify them in a host throws an exception.
 
 :::
 
@@ -150,8 +156,7 @@ If your module uses `PreferenceFragmentCompat`, you can move its subclasses to `
 ```kotlin
 class SettingsFragment : ModulePreferenceFragment() {
 
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        super.onCreatePreferences(savedInstanceState, rootKey)
+    override fun onPreferencesReady(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.settings_preferences, rootKey)
     }
 }
@@ -160,6 +165,8 @@ class SettingsFragment : ModulePreferenceFragment() {
 ::: danger
 
 You must inherit `ModulePreferenceFragment` to store preferences in `YukiHookPreferences`.
+
+Starting with `1.5.1`, `onCreatePreferences` can no longer be overridden. Move your existing initialization code to `onPreferencesReady`.
 
 :::
 

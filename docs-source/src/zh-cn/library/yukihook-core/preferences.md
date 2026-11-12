@@ -15,7 +15,13 @@ YukiHook 会在使用 [yukihook-runtime-xposed82](../yukihook-runtime-xposed82.m
 
 ::: warning
 
-在使用 [yukihook-runtime-xposed82](../yukihook-runtime-xposed82.md) 底座的模块中，建议监听框架服务的可用状态后使用，详情请参考 [模块状态 → Hook 框架服务状态](./module-status.md#hook-框架服务状态)。
+在使用 [yukihook-runtime-libxposed](../yukihook-runtime-libxposed.md) 底座的模块中，建议监听框架服务的可用状态后使用，详情请参考 [模块状态 → Hook 框架服务状态](./module-status.md#hook-框架服务状态)。
+
+:::
+
+::: danger
+
+从 `1.5.1` 起，在 Hook 框架提供的解决方案不可用时，偏好设置不会再回退到私有存储允许可读写，而是会直接抛出异常，你需要显式使用 `isAvailable` 判断偏好设置当前是否可用。
 
 :::
 
@@ -41,6 +47,8 @@ New XSharedPreferences，根据 LSPosed 的官方公告，它会在 2.3.0 版本
 对于未列出的 Hook 框架，只要它们是按照底座提供的 API 规范实现的，YukiHook 仍然会根据底座类型选择合适的存储方案。
 
 ## 基本用法
+
+在使用之前，你需要使用 `isAvailable` 判断偏好设置当前是否可用，使用 `isWritable` 判断偏好设置在当前环境中是否可写。
 
 当你在模块中存储偏好设置的时候，若当前处于 `Activity` 等存在 `Context` 的地方，可以使用如下方法。
 
@@ -105,11 +113,9 @@ preferences().edit()
     .apply()
 ```
 
-::: warning
+::: danger
 
-模块的偏好设置在宿主中是只读的，在宿主中对其进行的修改将被忽略。
-
-你可以使用 `isAvailable` 判断当前存储是否可用，使用 `isWritable` 判断当前存储是否可写。
+模块的偏好设置在宿主中是只读的，在宿主中对其进行修改将会抛出异常。
 
 :::
 
@@ -147,8 +153,7 @@ val value = preferences.get(Feature.Foo)
 ```kotlin
 class SettingsFragment : ModulePreferenceFragment() {
 
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        super.onCreatePreferences(savedInstanceState, rootKey)
+    override fun onPreferencesReady(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.settings_preferences, rootKey)
     }
 }
@@ -157,6 +162,8 @@ class SettingsFragment : ModulePreferenceFragment() {
 ::: danger
 
 你必须继承 `ModulePreferenceFragment` 才能将设置项存储到 `YukiHookPreferences` 中。
+
+从 `1.5.1` 起，`onCreatePreferences` 将不再允许被覆写，你需要将原来的初始化代码迁移至 `onPreferencesReady`。
 
 :::
 
