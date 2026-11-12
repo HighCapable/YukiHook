@@ -44,7 +44,7 @@ class RuntimeIsolationTest {
     }
 
     @Test
-    fun modulePreferencesUsePrivateStorageAfterReadableAccessFails() {
+    fun modulePreferencesPropagateReadableAccessFailure() {
         val modes = mutableListOf<Int>()
         val context = object : ContextWrapper(null) {
             override fun getPackageName() = "test.module"
@@ -58,7 +58,7 @@ class RuntimeIsolationTest {
         Assert.assertThrows(StorageRequested::class.java) { prefs.edit() }
         @Suppress("DEPRECATION")
         Assert.assertEquals(
-            listOf(Context.MODE_WORLD_READABLE, Context.MODE_PRIVATE, Context.MODE_WORLD_READABLE, Context.MODE_PRIVATE),
+            listOf(Context.MODE_WORLD_READABLE, Context.MODE_WORLD_READABLE),
             modes
         )
     }

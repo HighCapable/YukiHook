@@ -19,10 +19,7 @@
  *
  * This file is created by fankes on 2022/2/8.
  */
-@file:Suppress(
-    "unused", "MemberVisibilityCanBePrivate", "StaticFieldLeak", "SetWorldReadable",
-    "CommitPrefEdits", "UNCHECKED_CAST"
-)
+@file:Suppress("unused", "MemberVisibilityCanBePrivate", "UNCHECKED_CAST")
 
 package com.highcapable.yukihookapi.hook.xposed.preference
 
@@ -41,6 +38,8 @@ import com.highcapable.yukihookapi.runtime.YukiHookRuntime
  * [YukiHook] storage bridge implementation for [SharedPreferences] with extended storage options.
  *
  * Uses the storage selected by the current [YukiHookRuntime].
+ *
+ * Call [isAvailable] before using this API.
  *
  * To use [PreferenceFragmentCompat] in the module environment, [YukiHook] provides [ModulePreferenceFragment] with the same functionality.
  * @param context the context instance, null by default.
@@ -124,7 +123,7 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
      * Gets whether the current preferences are writable.
      * @return [Boolean]
      */
-    val isWritable get() = !isHostEnvironment || isUsingNativeStorage
+    val isWritable get() = (!isHostEnvironment || isUsingNativeStorage) && isAvailable
 
     /**
      * Customizes the shared preferences storage name.
@@ -259,7 +258,7 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
     /**
      * Creates a new [Editor].
      *
-     * Module preferences are read-only in a host process, so changes are ignored there.
+     * Module preferences are read-only in a host process, so the underlying storage rejects editing.
      * Call [native] first only when writing the host's private storage is intended.
      * @return [Editor]
      */
@@ -270,7 +269,7 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
      *
      * Calls [Editor.apply] automatically.
      *
-     * Module preferences are read-only in a host process, so changes are ignored there.
+     * Module preferences are read-only in a host process, so the underlying storage rejects editing.
      * Call [native] first only when writing the host's private storage is intended.
      * @param block the editing block.
      */
@@ -280,22 +279,23 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
      * Storage proxy for [YukiHookPreferences].
      *
      * Use [edit] to obtain [Editor].
-     * Module preferences are read-only in a host process, so changes are ignored there.
+     *
+     * Module preferences are read-only in a host process, so the underlying storage rejects editing.
      */
     inner class Editor internal constructor() : SharedPreferences.Editor {
 
-        private val editor = if (isWritable) current.edit() else null
+        private val editor = current.edit()
 
-        override fun remove(key: String) = apply { editor?.remove(key) }
+        override fun remove(key: String) = apply { editor.remove(key) }
 
-        override fun clear() = apply { editor?.clear() }
-        override fun putString(key: String?, value: String?) = apply { editor?.putString(key, value) }
+        override fun clear() = apply { editor.clear() }
+        override fun putString(key: String?, value: String?) = apply { editor.putString(key, value) }
 
-        override fun putStringSet(key: String?, values: Set<String?>?) = apply { editor?.putStringSet(key, values) }
-        override fun putBoolean(key: String, value: Boolean) = apply { editor?.putBoolean(key, value) }
-        override fun putInt(key: String, value: Int) = apply { editor?.putInt(key, value) }
-        override fun putFloat(key: String, value: Float) = apply { editor?.putFloat(key, value) }
-        override fun putLong(key: String, value: Long) = apply { editor?.putLong(key, value) }
+        override fun putStringSet(key: String?, values: Set<String?>?) = apply { editor.putStringSet(key, values) }
+        override fun putBoolean(key: String, value: Boolean) = apply { editor.putBoolean(key, value) }
+        override fun putInt(key: String, value: Int) = apply { editor.putInt(key, value) }
+        override fun putFloat(key: String, value: Float) = apply { editor.putFloat(key, value) }
+        override fun putLong(key: String, value: Long) = apply { editor.putLong(key, value) }
 
         /**
          * Stores a value of the specified type intelligently.
@@ -312,8 +312,8 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
          */
         fun remove(preference: PreferenceData<*>) = remove(preference.key)
 
-        override fun commit() = editor?.commit() ?: false
-        override fun apply() = editor?.apply() ?: Unit
+        override fun commit() = editor.commit()
+        override fun apply() = editor.apply()
 
         /**
          * Stores a value of the specified type intelligently.

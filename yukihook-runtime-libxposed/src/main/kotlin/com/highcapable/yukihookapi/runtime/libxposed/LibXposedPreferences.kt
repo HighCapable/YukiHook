@@ -27,7 +27,7 @@ import com.highcapable.yukihookapi.runtime.bridge.PreferencesBridge
 import io.github.libxposed.api.XposedInterface
 
 /**
- * Remote preferences with private module storage as the inactive fallback.
+ * Remote preferences provided by the connected framework.
  */
 internal object LibXposedPreferences {
 
@@ -39,7 +39,7 @@ internal object LibXposedPreferences {
 
         override fun open(context: Context?, packageName: String, name: String): SharedPreferences {
             if (context == null) return Host.open(context, packageName, name)
-            return LibXposedService.preferencesOrNull(name) ?: context.getSharedPreferences(name, Context.MODE_PRIVATE)
+            return LibXposedService.preferences(name)
         }
     }
 

@@ -48,13 +48,15 @@ class RuntimeIsolationTest {
     private class StorageRequested : RuntimeException()
 
     @Test
-    fun missingServiceFallsBackToPrivateStorage() {
+    fun missingServiceRejectsReadsAndWritesWithoutOpeningPrivateStorage() {
         val context = ModuleContext()
         val preferences = context.preferences()
-        Assert.assertThrows(StorageRequested::class.java) { preferences.getString("missing", "default") }
-        Assert.assertEquals(Context.MODE_PRIVATE, context.requestedMode)
-        Assert.assertThrows(StorageRequested::class.java) { preferences.edit() }
-        Assert.assertEquals(Context.MODE_PRIVATE, context.requestedMode)
+
+        Assert.assertFalse(preferences.isAvailable)
+        Assert.assertFalse(preferences.isWritable)
+        Assert.assertThrows(IllegalStateException::class.java) { preferences.getString("missing", "default") }
+        Assert.assertThrows(IllegalStateException::class.java) { preferences.edit() }
+        Assert.assertEquals(-1, context.requestedMode)
     }
 
     @Test

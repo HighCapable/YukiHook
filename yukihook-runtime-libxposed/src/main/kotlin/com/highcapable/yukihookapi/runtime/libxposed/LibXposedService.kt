@@ -126,9 +126,9 @@ internal object LibXposedService {
     fun requestScope(packages: List<String>, callback: XposedService.OnScopeEventListener) = useModuleScope { it.requestScope(packages, callback) }
     fun removeScope(packages: List<String>) = useModuleScope { it.removeScope(packages) }
 
-    fun preferencesOrNull(name: String) = useService("remote preferences", XposedService.PROP_CAP_REMOTE) {
+    fun preferences(name: String) = checkNotNull(useService("remote preferences", XposedService.PROP_CAP_REMOTE) {
         it.getRemotePreferences(name)
-    }
+    }) { "libxposed services are unavailable." }
 
     fun listRemoteFiles() = useRemoteFiles { it.listRemoteFiles().toList() }
     fun openRemoteFile(name: String) = useRemoteFiles { it.openRemoteFile(name) }
