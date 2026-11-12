@@ -46,21 +46,25 @@ internal object LibXposedPreferences {
     private object Host : PreferencesBridge {
 
         private var xposedApi: XposedInterface? = null
+        private val preferences = mutableMapOf<String, SharedPreferences>()
 
         private val api get() = checkNotNull(xposedApi) {
             "libxposed API host remote preferences are unavailable."
         }
 
+        @Synchronized
         fun attach(api: XposedInterface) {
+            preferences.clear()
             xposedApi = api
         }
 
-        override fun open(context: Context?, packageName: String, name: String): SharedPreferences {
+        @Synchronized
+        override fun open(context: Context?, packageName: String, name: String) = preferences.getOrPut(name) {
             check(api.frameworkProperties and XposedInterface.PROP_CAP_REMOTE != 0L) {
                 "This framework does not support remote preferences."
             }
 
-            return api.getRemotePreferences(name)
+            api.getRemotePreferences(name)
         }
     }
 }

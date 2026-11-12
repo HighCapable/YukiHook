@@ -46,12 +46,15 @@ internal object LibXposedSharedFiles {
     private object Host : SharedFilesBridge {
 
         private var xposedApi: XposedInterface? = null
+        private var remoteAvailable: Boolean? = null
 
         private val api get() = checkNotNull(xposedApi) {
             "libxposed API host remote files are unavailable."
         }
 
+        @Synchronized
         fun attach(api: XposedInterface) {
+            remoteAvailable = null
             xposedApi = api
         }
 
@@ -60,11 +63,13 @@ internal object LibXposedSharedFiles {
             return this
         }
 
-        override val isAvailable get() = xposedApi?.frameworkProperties?.let {
-            it and XposedInterface.PROP_CAP_REMOTE != 0L
-        } ?: false
+        override val isAvailable
+            @Synchronized
+            get() = remoteAvailable ?: xposedApi?.frameworkProperties?.let { capability ->
+                (capability and XposedInterface.PROP_CAP_REMOTE != 0L).also { remoteAvailable = it }
+            } ?: false
 
-        override val isWritable get() = false
+        override val isWritable = false
 
         override fun list() = api.listRemoteFiles().toList()
         override fun open(name: String) = api.openRemoteFile(name)

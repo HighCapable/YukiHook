@@ -50,10 +50,10 @@ internal object LibXposedService {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    private val services = IdentityHashMap<IBinder, XposedService>()
+    private val services = IdentityHashMap<IBinder, ServiceConnection>()
     private val listeners = CopyOnWriteArraySet<ServiceSubscription>()
 
-    private val service get() = synchronized(services) { services.values.singleOrNull() }
+    private val service get() = synchronized(services) { services.values.singleOrNull()?.service }
 
     private var initialized = false
 
@@ -86,7 +86,7 @@ internal object LibXposedService {
                 val isAdded = synchronized(services) {
                     val binder = YukiHookServiceBridge.asBinder(service)
                     if (binder !in services) {
-                        services[binder] = service
+                        services[binder] = ServiceConnection(service)
                         true
                     } else false
                 }
@@ -174,10 +174,17 @@ internal object LibXposedService {
                 "This framework does not support $capabilityName"
             }
         }
-        return block(current)
+        return block(current.service)
     }
 
     private fun notifyListeners() = listeners.forEach { it.dispatch() }
+
+    /**
+     * Keeps cached properties within one service connection.
+     */
+    private class ServiceConnection(val service: XposedService) {
+        val frameworkProperties by lazy { service.frameworkProperties }
+    }
 
     /**
      * Independent lifecycle-aware subscription with callbacks delivered on the main thread.
