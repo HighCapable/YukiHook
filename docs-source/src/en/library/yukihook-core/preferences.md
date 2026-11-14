@@ -18,12 +18,9 @@ YukiHook uses the `XSharedPreferences` solution in modules built with the [yukih
 In modules using the [yukihook-runtime-libxposed](../yukihook-runtime-libxposed.md) base module, it is recommended to observe framework service availability before use.
 See [Module Status → Hook Framework Service Status](./module-status.md#hook-framework-service-status).
 
-:::
-
-::: danger
-
 Starting with `1.5.1`, when the storage solution provided by the hook framework is unavailable, preferences no longer fall back to private storage for reads and writes.
-Instead, an exception is thrown. You need to explicitly check `isAvailable` to determine whether preferences are currently available.
+Instead, data is written to memory and a warning is logged. This data is lost when the module restarts and is not written back to storage when the solution becomes available again.
+It is recommended to explicitly check `isAvailable` to determine whether preferences are currently available.
 
 :::
 

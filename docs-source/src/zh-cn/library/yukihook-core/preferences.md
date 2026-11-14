@@ -17,11 +17,7 @@ YukiHook 会在使用 [yukihook-runtime-xposed82](../yukihook-runtime-xposed82.m
 
 在使用 [yukihook-runtime-libxposed](../yukihook-runtime-libxposed.md) 底座的模块中，建议监听框架服务的可用状态后使用，详情请参考 [模块状态 → Hook 框架服务状态](./module-status.md#hook-框架服务状态)。
 
-:::
-
-::: danger
-
-从 `1.5.1` 起，在 Hook 框架提供的解决方案不可用时，偏好设置不会再回退到私有存储允许可读写，而是会直接抛出异常，你需要显式使用 `isAvailable` 判断偏好设置当前是否可用。
+从 `1.5.1` 起，在 Hook 框架提供的解决方案不可用时，偏好设置不会再回退到私有存储允许可读写，而是会写入内存并打印警告日志，在模块重启后会丢失，在解决方案恢复可用时，也不会重新将内存中的数据写回存储，推荐显式使用 `isAvailable` 判断偏好设置当前是否可用。
 
 :::
 
