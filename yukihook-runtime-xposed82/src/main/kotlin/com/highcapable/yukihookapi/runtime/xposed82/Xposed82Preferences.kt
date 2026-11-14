@@ -38,6 +38,8 @@ internal object Xposed82Preferences {
 
         private val modulePreferences = mutableMapOf<String, SharedPreferences>()
 
+        override val isAvailable get() = YukiHookBridge.isModuleActive
+
         @Synchronized
         override fun open(context: Context?, packageName: String, name: String): SharedPreferences {
             if (context == null) return Host.open(context, packageName, name)
@@ -54,6 +56,8 @@ internal object Xposed82Preferences {
     private object Host : PreferencesBridge {
 
         private val hostPreferences = mutableMapOf<String, XSharedPreferences>()
+
+        override val isAvailable get() = YukiHookBridge.isAvailable
 
         @Synchronized
         override fun open(context: Context?, packageName: String, name: String): SharedPreferences {

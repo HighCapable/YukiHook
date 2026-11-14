@@ -25,8 +25,11 @@ package com.highcapable.yukihookapi.hook.xposed.preference
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Handler
+import android.os.Looper
 import androidx.preference.PreferenceFragmentCompat
 import com.highcapable.yukihookapi.YukiHook
+import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.xposed.bridge.XposedModuleRuntime
 import com.highcapable.yukihookapi.hook.xposed.parasitic.AppParasitism
 import com.highcapable.yukihookapi.hook.xposed.preference.data.PreferenceData
@@ -39,7 +42,8 @@ import com.highcapable.yukihookapi.runtime.YukiHookRuntime
  *
  * Uses the storage selected by the current [YukiHookRuntime].
  *
- * Call [isAvailable] before using this API.
+ * Uses temporary in-memory storage while the runtime preferences are unavailable.
+ * Check [isAvailable] before relying on persistent, shared data.
  *
  * To use [PreferenceFragmentCompat] in the module environment, [YukiHook] provides [ModulePreferenceFragment] with the same functionality.
  * @param context the context instance, null by default.
@@ -49,6 +53,7 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
     internal companion object {
 
         private val isHostEnvironment = XposedModuleRuntime.isHostEnvironment
+        private val inMemoryPreferences = mutableMapOf<Pair<String, String>, InMemoryPreferences>()
 
         /**
          * Creates a bridge for the module or the current host.
@@ -63,6 +68,8 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
 
     /** Whether native storage is enabled. */
     private var isUsingNativeStorage = false
+
+    private val runtime = YukiHookBridge.preferences(isHostEnvironment)
 
     /**
      * Gets the current storage name, package name + "_preferences" by default.
@@ -93,11 +100,17 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
             "Native preferences require a Context."
         }.getSharedPreferences(currentPreferenceName, Context.MODE_PRIVATE)
 
-        return YukiHookBridge.preferences(isHostEnvironment).open(
-            context = context,
-            packageName = XposedModuleRuntime.modulePackageName.ifBlank { context?.packageName ?: "" },
-            name = currentPreferenceName
+        val packageName = XposedModuleRuntime.modulePackageName.ifBlank { context?.packageName ?: "" }
+        if (runtime.isAvailable) return runtime.open(context, packageName, currentPreferenceName)
+
+        YLog.innerW(
+            "Shared preferences \"$packageName/$currentPreferenceName\" are unavailable. Using temporary in-memory storage. " +
+                "Changes are not saved to disk or shared with other processes, are lost when this process ends, " +
+                "and will not be copied to shared storage when it becomes available."
         )
+        return synchronized(inMemoryPreferences) {
+            inMemoryPreferences.getOrPut(packageName to currentPreferenceName) { InMemoryPreferences() }
+        }
     }
 
     // region Deprecated properties for backward compatibility
@@ -114,10 +127,10 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
     // endregion
 
     /**
-     * Gets whether the current preferences are available.
+     * Gets whether the current preferences is available.
      * @return [Boolean]
      */
-    val isAvailable get() = runCatching { current.contains(""); true }.getOrDefault(false)
+    val isAvailable get() = if (isUsingNativeStorage) context != null else runtime.isAvailable
 
     /**
      * Gets whether the current preferences are writable.
@@ -274,6 +287,107 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
      * @param block the editing block.
      */
     inline fun edit(block: Editor.() -> Unit) = edit().apply(block).apply()
+
+    /**
+     * In-memory storage for [YukiHookPreferences] when the runtime preferences are unavailable.
+     *
+     * Changes are not saved to disk or shared with other processes, are lost when this process ends,
+     * and will not be copied to shared storage when it becomes available.
+     */
+    private class InMemoryPreferences : SharedPreferences {
+
+        private val values = mutableMapOf<String?, Any>()
+        private val listeners = mutableSetOf<SharedPreferences.OnSharedPreferenceChangeListener>()
+
+        override fun getAll() = synchronized(values) { values.toMutableMap() }
+        override fun contains(key: String?) = synchronized(values) { values.containsKey(key) }
+        override fun getString(key: String?, defValue: String?) = (value(key) as String?) ?: defValue
+        override fun getStringSet(key: String?, defValues: Set<String>?) = (value(key) as Set<String>?)?.toSet() ?: defValues
+        override fun getInt(key: String?, defValue: Int) = (value(key) as Int?) ?: defValue
+        override fun getLong(key: String?, defValue: Long) = (value(key) as Long?) ?: defValue
+        override fun getFloat(key: String?, defValue: Float) = (value(key) as Float?) ?: defValue
+        override fun getBoolean(key: String?, defValue: Boolean) = (value(key) as Boolean?) ?: defValue
+
+        override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+            synchronized(values) { listeners.add(listener) }
+        }
+
+        override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+            synchronized(values) { listeners.remove(listener) }
+        }
+
+        override fun edit(): SharedPreferences.Editor {
+            if (isHostEnvironment) throw UnsupportedOperationException("Module shared preferences are read-only in a host process.")
+            return Editor()
+        }
+
+        private fun value(key: String?) = synchronized(values) { values[key] }
+
+        private inner class Editor : SharedPreferences.Editor {
+
+            private val changes = mutableMapOf<String?, Any?>()
+            private var clear = false
+
+            override fun putString(key: String?, value: String?) = put(key, value)
+            override fun putStringSet(key: String?, values: Set<String>?) = put(key, values?.toSet())
+            override fun putInt(key: String?, value: Int) = put(key, value)
+            override fun putLong(key: String?, value: Long) = put(key, value)
+            override fun putFloat(key: String?, value: Float) = put(key, value)
+            override fun putBoolean(key: String?, value: Boolean) = put(key, value)
+            override fun remove(key: String?) = put(key, null)
+            override fun clear() = apply { synchronized(this) { clear = true } }
+
+            override fun commit(): Boolean {
+                val keys = mutableSetOf<String?>()
+                val callbacks = synchronized(values) {
+                    synchronized(this) {
+                        if (clear) {
+                            if (values.isNotEmpty()) keys.add(null)
+                            values.clear()
+                            clear = false
+                        }
+                        changes.forEach { (key, value) ->
+                            when {
+                                value == null -> {
+                                    if (values.containsKey(key)) {
+                                        values.remove(key)
+                                        keys.add(key)
+                                    }
+                                }
+                                values[key] != value -> {
+                                    values[key] = value
+                                    keys.add(key)
+                                }
+                            }
+                        }
+                        changes.clear()
+                    }
+                    listeners.toList()
+                }
+
+                if (keys.isNotEmpty() && callbacks.isNotEmpty()) {
+                    val notify = Runnable {
+                        keys.forEach { key ->
+                            callbacks.forEach {
+                                it.onSharedPreferenceChanged(this@InMemoryPreferences, key)
+                            }
+                        }
+                    }
+                    if (Looper.myLooper() == Looper.getMainLooper()) notify.run()
+                    else Handler(Looper.getMainLooper()).post(notify)
+                }
+
+                // The values are kept in memory, but commit cannot report a successful persistent write.
+                return false
+            }
+
+            override fun apply() {
+                commit()
+            }
+
+            private fun put(key: String?, value: Any?) = apply { synchronized(this) { changes[key] = value } }
+        }
+    }
 
     /**
      * Storage proxy for [YukiHookPreferences].

@@ -60,7 +60,7 @@ abstract class ModulePreferenceFragment : PreferenceFragmentCompat(), SharedPref
 
         if (!YukiHook.Status.isHostEnvironment && YukiHook.Status.runtime == YukiHookRuntime.LIBXPOSED)
             YukiHook.Status.observeFrameworkService(lifecycle) { available ->
-                if (available || preferenceScreen == null) initializePreferences(savedInstanceState, rootKey, available)
+                if (available || preferenceScreen == null) initializePreferences(savedInstanceState, rootKey)
                 else releasePreferences()
             }
         else initializePreferences(savedInstanceState, rootKey)
@@ -78,16 +78,16 @@ abstract class ModulePreferenceFragment : PreferenceFragmentCompat(), SharedPref
      * Creates the preference screen using stored values when available, or defaults otherwise.
      *
      * Called again when the framework service connects or reconnects. Load preferences and register UI callbacks here.
-     * Control whether preferences are enabled here; writes require available, writable storage.
+     * Control whether preferences are enabled here, unavailable shared storage uses temporary in-memory storage.
      * @param savedInstanceState the saved fragment state.
      * @param rootKey the root preference key.
      */
     abstract fun onPreferencesReady(savedInstanceState: Bundle?, rootKey: String?)
 
-    private fun initializePreferences(savedInstanceState: Bundle?, rootKey: String?, available: Boolean = true) {
+    private fun initializePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         releasePreferences()
 
-        current = if (available) runCatching { preferences.current }.getOrNull() else null
+        current = preferences.current
         current?.registerOnSharedPreferenceChangeListener(this)
 
         preferenceScreen = null
@@ -107,20 +107,20 @@ abstract class ModulePreferenceFragment : PreferenceFragmentCompat(), SharedPref
 
     private fun createDataStore() = object : PreferenceDataStore() {
 
-        private val storage get() = current ?: if (isInitializing) null else preferences.current
+        private val storage get() = current ?: preferences.current
 
         private inline fun edit(block: SharedPreferences.Editor.() -> Unit) {
-            // AndroidX persists defaults during initialization, even without writable storage.
-            if (isInitializing && (current == null || YukiHook.Status.isHostEnvironment)) return
-            (current ?: preferences.current).edit(action = block)
+            // AndroidX persists defaults during initialization, even in a read-only host environment.
+            if (isInitializing && YukiHook.Status.isHostEnvironment) return
+            storage.edit(action = block)
         }
 
-        override fun getString(key: String, defValue: String?) = storage?.getString(key, defValue) ?: defValue
-        override fun getStringSet(key: String, defValues: Set<String>?) = storage?.getStringSet(key, defValues) ?: defValues
-        override fun getInt(key: String, defValue: Int) = storage?.getInt(key, defValue) ?: defValue
-        override fun getLong(key: String, defValue: Long) = storage?.getLong(key, defValue) ?: defValue
-        override fun getFloat(key: String, defValue: Float) = storage?.getFloat(key, defValue) ?: defValue
-        override fun getBoolean(key: String, defValue: Boolean) = storage?.getBoolean(key, defValue) ?: defValue
+        override fun getString(key: String, defValue: String?) = storage.getString(key, defValue) ?: defValue
+        override fun getStringSet(key: String, defValues: Set<String>?) = storage.getStringSet(key, defValues) ?: defValues
+        override fun getInt(key: String, defValue: Int) = storage.getInt(key, defValue)
+        override fun getLong(key: String, defValue: Long) = storage.getLong(key, defValue)
+        override fun getFloat(key: String, defValue: Float) = storage.getFloat(key, defValue)
+        override fun getBoolean(key: String, defValue: Boolean) = storage.getBoolean(key, defValue)
         override fun putString(key: String, value: String?) = edit {
             if (value == null) remove(key) else putString(key, value)
         }

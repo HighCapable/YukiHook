@@ -62,6 +62,7 @@ internal object LibXposedService {
     val frameworkName get() = runCatching { service?.frameworkName }.getOrNull() ?: "unknown"
     val frameworkVersion get() = runCatching { service?.frameworkVersion }.getOrNull() ?: "unknown"
     val frameworkVersionCode get() = runCatching { service?.frameworkVersionCode }.getOrNull() ?: -1L
+    val isPreferencesAvailable get() = usePreferences(false) { true }
     val isRemoteFileAccessAvailable get() = useRemoteFiles(false) { true }
 
     class HookedTarget(private val service: XposedService, val target: NativeHookedTarget) {
@@ -126,9 +127,7 @@ internal object LibXposedService {
     fun requestScope(packages: List<String>, callback: XposedService.OnScopeEventListener) = useModuleScope { it.requestScope(packages, callback) }
     fun removeScope(packages: List<String>) = useModuleScope { it.removeScope(packages) }
 
-    fun preferences(name: String) = checkNotNull(useService("remote preferences", XposedService.PROP_CAP_REMOTE) {
-        it.getRemotePreferences(name)
-    }) { "libxposed services are unavailable." }
+    fun preferences(name: String) = usePreferences { it.getRemotePreferences(name) }
 
     fun listRemoteFiles() = useRemoteFiles { it.listRemoteFiles().toList() }
     fun openRemoteFile(name: String) = useRemoteFiles { it.openRemoteFile(name) }
@@ -150,6 +149,10 @@ internal object LibXposedService {
             }
             block(it)
         }
+    ) { "libxposed services are unavailable." }
+
+    private inline fun <T> usePreferences(defaultValue: T? = null, block: (XposedService) -> T) = checkNotNull(
+        useService("remote preferences", XposedService.PROP_CAP_REMOTE, block) ?: defaultValue
     ) { "libxposed services are unavailable." }
 
     private inline fun <T> useRemoteFiles(defaultValue: T? = null, block: (XposedService) -> T) = checkNotNull(

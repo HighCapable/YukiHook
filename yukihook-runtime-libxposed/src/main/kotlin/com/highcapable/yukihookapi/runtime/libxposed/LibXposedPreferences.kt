@@ -37,6 +37,8 @@ internal object LibXposedPreferences {
 
     private object Module : PreferencesBridge {
 
+        override val isAvailable get() = LibXposedService.isPreferencesAvailable
+
         override fun open(context: Context?, packageName: String, name: String): SharedPreferences {
             if (context == null) return Host.open(context, packageName, name)
             return LibXposedService.preferences(name)
@@ -48,9 +50,7 @@ internal object LibXposedPreferences {
         private var xposedApi: XposedInterface? = null
         private val preferences = mutableMapOf<String, SharedPreferences>()
 
-        private val api get() = checkNotNull(xposedApi) {
-            "libxposed API host remote preferences are unavailable."
-        }
+        override val isAvailable get() = use(false) { true }
 
         @Synchronized
         fun attach(api: XposedInterface) {
@@ -60,11 +60,16 @@ internal object LibXposedPreferences {
 
         @Synchronized
         override fun open(context: Context?, packageName: String, name: String) = preferences.getOrPut(name) {
-            check(api.frameworkProperties and XposedInterface.PROP_CAP_REMOTE != 0L) {
-                "This framework does not support remote preferences."
-            }
-
-            api.getRemotePreferences(name)
+            use { it.getRemotePreferences(name) }
         }
+
+        private inline fun <T> use(defaultValue: T? = null, block: (XposedInterface) -> T) = checkNotNull(
+            xposedApi?.let {
+                check(it.frameworkProperties and XposedInterface.PROP_CAP_REMOTE != 0L) {
+                    "This framework does not support remote preferences."
+                }
+                block(it)
+            } ?: defaultValue
+        ) { "libxposed API host remote preferences are unavailable." }
     }
 }

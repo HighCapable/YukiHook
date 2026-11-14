@@ -26,13 +26,28 @@ import android.content.ContextWrapper
 import android.content.SharedPreferences
 import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.hook.factory.preferences
+import com.highcapable.yukihookapi.hook.log.YLog
+import org.junit.After
 import org.junit.Assert
+import org.junit.Before
 import org.junit.Test
 
 /**
  * Verifies legacy module preference storage when no framework service is available.
  */
 class RuntimeIsolationTest {
+
+    private val previousEnabled = YLog.Config.enabled
+
+    @Before
+    fun setUp() {
+        YLog.Config.enabled = false
+    }
+
+    @After
+    fun tearDown() {
+        YLog.Config.enabled = previousEnabled
+    }
 
     private class StorageRequested : RuntimeException()
 
@@ -41,6 +56,28 @@ class RuntimeIsolationTest {
         val reload = YukiHook.Module.reload
         Assert.assertFalse(reload.isAvailable)
         Assert.assertThrows(IllegalStateException::class.java) { reload.targets }
+    }
+
+    @Test
+    fun inactiveModuleUsesMemoryWithoutOpeningLocalStorage() {
+        val modes = mutableListOf<Int>()
+        val context = object : ContextWrapper(null) {
+            override fun getPackageName() = "test.module"
+            override fun getSharedPreferences(name: String, mode: Int): SharedPreferences {
+                modes += mode
+                throw StorageRequested()
+            }
+        }
+        val preferences = context.preferences().name("inactive-module")
+        preferences.edit { clear() }
+        Assert.assertTrue(preferences.getBoolean("missing", true))
+
+        preferences.edit { putBoolean("key", true) }
+
+        Assert.assertTrue(context.preferences().name("inactive-module").getBoolean("key"))
+        Assert.assertFalse(preferences.isAvailable)
+        Assert.assertFalse(preferences.isWritable)
+        Assert.assertTrue(modes.isEmpty())
     }
 
     @Test
@@ -53,9 +90,9 @@ class RuntimeIsolationTest {
                 throw StorageRequested()
             }
         }
-        val prefs = context.preferences()
-        Assert.assertThrows(StorageRequested::class.java) { prefs.getBoolean("key", true) }
-        Assert.assertThrows(StorageRequested::class.java) { prefs.edit() }
+        val bridge = YukiHookBridge.preferences(false)
+        Assert.assertThrows(StorageRequested::class.java) { bridge.open(context, "test.module", "test") }
+        Assert.assertThrows(StorageRequested::class.java) { bridge.open(context, "test.module", "test") }
         @Suppress("DEPRECATION")
         Assert.assertEquals(
             listOf(Context.MODE_WORLD_READABLE, Context.MODE_WORLD_READABLE),

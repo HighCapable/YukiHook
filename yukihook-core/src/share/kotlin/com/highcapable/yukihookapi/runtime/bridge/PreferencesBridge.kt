@@ -31,6 +31,9 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 interface PreferencesBridge {
 
+    /** Whether the selected runtime can provide shared preferences. */
+    val isAvailable: Boolean
+
     /**
      * Opens the preferences selected by the current environment.
      * @param context the module context, if available.
