@@ -407,7 +407,8 @@ internal object AppParasitism : ModuleReloadable {
                 YukiHookHelper.hook(firstMethod { name = "onTerminate" }, object : ClassicHookerBridge {
                     override fun afterHooked(param: ClassicHookerBridge.Param) {
                         val application = param.instance as? Application ?: return
-                        if (application.packageName != lifecyclePackageName) return
+                        // Some hosts create auxiliary Applications without attaching a Context, skip them before reading the package name.
+                        if (application.baseContext == null || application.packageName != lifecyclePackageName) return
 
                         param.dispatchAppLifecycle { onTerminate(application) }
                     }
@@ -415,7 +416,7 @@ internal object AppParasitism : ModuleReloadable {
                 YukiHookHelper.hook(firstMethod { name = "onLowMemory" }, object : ClassicHookerBridge {
                     override fun afterHooked(param: ClassicHookerBridge.Param) {
                         val application = param.instance as? Application ?: return
-                        if (application.packageName != lifecyclePackageName) return
+                        if (application.baseContext == null || application.packageName != lifecyclePackageName) return
 
                         param.dispatchAppLifecycle { onLowMemory(application) }
                     }
@@ -423,7 +424,7 @@ internal object AppParasitism : ModuleReloadable {
                 YukiHookHelper.hook(firstMethod { name = "onTrimMemory"; parameters(Int::class) }, object : ClassicHookerBridge {
                     override fun afterHooked(param: ClassicHookerBridge.Param) {
                         val application = param.instance as? Application ?: return
-                        if (application.packageName != lifecyclePackageName) return
+                        if (application.baseContext == null || application.packageName != lifecyclePackageName) return
                         val level = param.args[0] as? Int ?: return
 
                         param.dispatchAppLifecycle { onTrimMemory(application, level) }
@@ -434,7 +435,7 @@ internal object AppParasitism : ModuleReloadable {
                     object : ClassicHookerBridge {
                         override fun afterHooked(param: ClassicHookerBridge.Param) {
                             val application = param.instance as? Application ?: return
-                            if (application.packageName != lifecyclePackageName) return
+                            if (application.baseContext == null || application.packageName != lifecyclePackageName) return
                             val config = param.args[0] as? Configuration ?: return
 
                             param.dispatchAppLifecycle { onConfigurationChanged(application, config) }
@@ -463,7 +464,7 @@ internal object AppParasitism : ModuleReloadable {
                 }, object : ClassicHookerBridge {
                     override fun afterHooked(param: ClassicHookerBridge.Param) {
                         val application = param.args[0] as? Application ?: return
-                        if (application.packageName != lifecyclePackageName) return
+                        if (application.baseContext == null || application.packageName != lifecyclePackageName) return
 
                         initializeHostApplication(application)?.let { param.throwable = it }
                     }
