@@ -264,9 +264,17 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
         return ModuleLifecycleManager.prepareFailed(saveState)
     }
 
-    override fun onBeginRestoreModule(appInfo: ApplicationInfo, state: Any?) = ModuleLifecycleManager.beginRestore(state).also {
-        ModuleLifecycleManager.prepareRestore(appInfo, it)
-        ModuleLifecycleManager.restoreComponents(appInfo, it, ModuleReloadable.RestorePhase.PREREQUISITE)
+    override fun onBeginRestoreModule(appInfo: ApplicationInfo, state: Any?): ModuleHandoffState {
+        // Another install can remove this generation's APK before its resources are loaded.
+        // Stop restoration before module code runs with unavailable resources.
+        checkNotNull(currentModuleResources) {
+            "Cannot restore the module because its resources could not be created from $moduleSourceDir"
+        }
+
+        return ModuleLifecycleManager.beginRestore(state).also {
+            ModuleLifecycleManager.prepareRestore(appInfo, it)
+            ModuleLifecycleManager.restoreComponents(appInfo, it, ModuleReloadable.RestorePhase.PREREQUISITE)
+        }
     }
 
     override fun onRestoreUserState(state: ModuleHandoffState) = ModuleLifecycleManager.restoreState(state)
