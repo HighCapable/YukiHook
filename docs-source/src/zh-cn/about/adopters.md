@@ -32,5 +32,6 @@
 | [Bilibili_Innocent_Lab](https://github.com/jichuo1/Bilibili_Innocent_Lab)          | [jichuo1](https://github.com/jichuo1)           |
 | [LuckyTool](https://github.com/luckyzyx/LuckyTool)                                 | [luckyzyx](https://github.com/luckyzyx)         |
 | [自由解锁](https://github.com/TheWhiteDog9487/FreeUnlock)                          | [TheWhiteDog9487](https://github.com/TheWhiteDog9487) |
+| [WaEnhancer](https://github.com/Dev4Mod/WaEnhancer)                                | [Dev4Mod](https://github.com/Dev4Mod)           |
 
 如果你也在使用 YukiHook，你可以提交 PR 将你的项目添加到此列表中 (私有仓库可以不需要注明网页链接)。
