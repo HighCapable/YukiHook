@@ -40,6 +40,8 @@ internal object ParcelCreatorCache : ModuleReloadable {
 
     const val RELOAD_ID = "parcel-creator-cache"
 
+    override val requiresSavedState = false
+
     private val resolver = HiddenApiBypassResolver()
 
     override fun onDispose() {

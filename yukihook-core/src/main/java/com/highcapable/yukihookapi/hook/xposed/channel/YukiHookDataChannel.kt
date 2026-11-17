@@ -74,6 +74,7 @@ class YukiHookDataChannel private constructor() {
 
         const val RELOAD_ID = "data-channel"
 
+        override val requiresSavedState = false
         override val requiresMainThread = true
 
         private var events = ModuleEventDispatcher()
