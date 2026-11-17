@@ -31,5 +31,6 @@
 | [Lyricon](https://github.com/proify/lyricon)                                       | [Tomakino](https://github.com/proify)           |
 | [Bilibili_Innocent_Lab](https://github.com/jichuo1/Bilibili_Innocent_Lab)          | [jichuo1](https://github.com/jichuo1)           |
 | [LuckyTool](https://github.com/luckyzyx/LuckyTool)                                 | [luckyzyx](https://github.com/luckyzyx)         |
+| [FreeUnlock](https://github.com/TheWhiteDog9487/FreeUnlock)                        | [TheWhiteDog9487](https://github.com/TheWhiteDog9487) |
 
 If you are also using YukiHook, you can submit a PR to add your project to this list (private repositories do not need to include a web link).
