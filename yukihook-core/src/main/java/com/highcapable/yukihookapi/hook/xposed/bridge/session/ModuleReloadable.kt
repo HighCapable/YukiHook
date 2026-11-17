@@ -49,6 +49,9 @@ internal interface ModuleReloadable {
     /** The phase in which this component restores its state. */
     val restorePhase get() = RestorePhase.REBUILD
 
+    /** Whether restoration requires an entry saved by the previous module instance, even if its value is null. */
+    val requiresSavedState get() = true
+
     /** Whether lifecycle events, except entry-thread attachment, run on the host main thread. */
     val requiresMainThread get() = false
 
@@ -81,14 +84,14 @@ internal interface ModuleReloadable {
     /**
      * Makes saved component prerequisites available before the entry and its declarations run.
      * @param appInfo the new Xposed module application info.
-     * @param state the value returned by the old module instance's [onSaveState].
+     * @param state the value returned by the old module instance's [onSaveState], or null if its optional entry is absent.
      */
     fun onPrepareRestore(appInfo: ApplicationInfo, state: Any?) = Unit
 
     /**
      * Rebuilds this component in the new module instance at its registered phase.
      * @param appInfo the new Xposed module application info.
-     * @param state the value returned by the old module instance's [onSaveState].
+     * @param state the value returned by the old module instance's [onSaveState], or null if its optional entry is absent.
      */
     fun onRestoreState(appInfo: ApplicationInfo, state: Any?) = Unit
 }

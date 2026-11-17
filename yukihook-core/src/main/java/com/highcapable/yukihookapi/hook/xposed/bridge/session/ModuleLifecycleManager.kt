@@ -186,14 +186,14 @@ internal object ModuleLifecycleManager {
     }
 
     /**
-     * Decodes the handoff and checks that every registered component has saved state.
+     * Decodes the handoff and checks that components requiring saved state have an entry.
      * @param state the handoff state to decode.
      * @return [ModuleHandoffState] the decoded handoff state.
      */
     fun beginRestore(state: Any?): ModuleHandoffState {
         val restored = ModuleHandoffState.decode(state)
         components.forEach {
-            check(it.id in restored.components) {
+            check(!it.instance.requiresSavedState || it.id in restored.components) {
                 "Missing reload component '${it.id}'"
             }
         }
@@ -220,7 +220,7 @@ internal object ModuleLifecycleManager {
     fun prepareRestore(appInfo: ApplicationInfo, state: ModuleHandoffState) {
         components.forEach { component ->
             runCatching {
-                component.call { onPrepareRestore(appInfo, state.components.getValue(component.id)) }
+                component.call { onPrepareRestore(appInfo, state.components[component.id]) }
             }.onFailure(::recordRestoreFailure)
         }
     }
@@ -233,7 +233,7 @@ internal object ModuleLifecycleManager {
      */
     fun restoreComponents(appInfo: ApplicationInfo, state: ModuleHandoffState, phase: ModuleReloadable.RestorePhase) {
         components.filter { it.instance.restorePhase == phase }.forEach { component ->
-            val result = runCatching { component.call { onRestoreState(appInfo, state.components.getValue(component.id)) } }
+            val result = runCatching { component.call { onRestoreState(appInfo, state.components[component.id]) } }
 
             // Prerequisites must succeed before module code runs.
             // Rebuild failures are collected so other components can continue.
