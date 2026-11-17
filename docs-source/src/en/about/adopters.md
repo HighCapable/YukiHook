@@ -32,5 +32,6 @@
 | [Bilibili_Innocent_Lab](https://github.com/jichuo1/Bilibili_Innocent_Lab)          | [jichuo1](https://github.com/jichuo1)           |
 | [LuckyTool](https://github.com/luckyzyx/LuckyTool)                                 | [luckyzyx](https://github.com/luckyzyx)         |
 | [FreeUnlock](https://github.com/TheWhiteDog9487/FreeUnlock)                        | [TheWhiteDog9487](https://github.com/TheWhiteDog9487) |
+| [WaEnhancer](https://github.com/Dev4Mod/WaEnhancer)                                | [Dev4Mod](https://github.com/Dev4Mod)           |
 
 If you are also using YukiHook, you can submit a PR to add your project to this list (private repositories do not need to include a web link).
