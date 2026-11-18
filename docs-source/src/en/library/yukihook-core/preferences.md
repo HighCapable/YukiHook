@@ -19,7 +19,7 @@ In modules using the [yukihook-runtime-libxposed](../yukihook-runtime-libxposed.
 See [Module Status → Hook Framework Service Status](./module-status.md#hook-framework-service-status).
 
 Starting with `1.5.1`, when the storage solution provided by the hook framework is unavailable, preferences no longer fall back to private storage for reads and writes.
-Instead, data is written to memory and a warning is logged. This data is lost when the module restarts and is not written back to storage when the solution becomes available again.
+Instead, data is written to memory and a warning is logged when `YukiHook.Config.debug` is enabled. This data is lost when the module restarts and is not written back to storage when the solution becomes available again.
 It is recommended to explicitly check `isAvailable` to determine whether preferences are currently available.
 
 :::
