@@ -98,6 +98,23 @@ class HookChain private constructor(
     fun <T> arg(index: Int) = arg(index) as T?
 
     /**
+     * Reads an invocation argument.
+     * @see arg
+     * @param index the argument index.
+     * @return [Any] or null if the argument is null or the index is out of bounds.
+     */
+    fun argOrNull(index: Int) = args.getOrNull(index)
+
+    /**
+     * Reads an invocation argument as [T].
+     * @see arg
+     * @param index the argument index.
+     * @return [T] or null if the index is out of bounds, the argument is null, or its type does not match [T].
+     */
+    @JvmName("argOrNullTyped")
+    inline fun <reified T> argOrNull(index: Int) = argOrNull(index) as? T
+
+    /**
      * Reads the first invocation argument.
      * @see arg
      * @see args
@@ -118,6 +135,21 @@ class HookChain private constructor(
     fun <T> firstArg() = firstArg() as T?
 
     /**
+     * Reads the first invocation argument.
+     * @see firstArg
+     * @return [Any] or null if the first argument is null or the invocation has no arguments.
+     */
+    fun firstArgOrNull() = args.firstOrNull()
+
+    /**
+     * Reads the first invocation argument as [T].
+     * @see firstArg
+     * @return [T] or null if the argument is absent, is null, or has a different type.
+     */
+    @JvmName("firstArgOrNullTyped")
+    inline fun <reified T> firstArgOrNull() = firstArgOrNull() as? T
+
+    /**
      * Reads the last invocation argument.
      * @see arg
      * @see args
@@ -136,6 +168,21 @@ class HookChain private constructor(
      */
     @JvmName("lastArgTyped")
     fun <T> lastArg() = lastArg() as T?
+
+    /**
+     * Reads the last invocation argument.
+     * @see lastArg
+     * @return [Any] or null if the last argument is null or the invocation has no arguments.
+     */
+    fun lastArgOrNull() = args.lastOrNull()
+
+    /**
+     * Reads the last invocation argument as [T].
+     * @see lastArg
+     * @return [T] or null if the argument is absent, is null, or has a different type.
+     */
+    @JvmName("lastArgOrNullTyped")
+    inline fun <reified T> lastArgOrNull() = lastArgOrNull() as? T
 
     /**
      * Continues the remaining chain with the current arguments and receiver.

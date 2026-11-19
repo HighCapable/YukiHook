@@ -19,6 +19,8 @@
  *
  * This file is created by fankes on 2026/9/12.
  */
+@file:Suppress("RedundantNullableReturnType")
+
 package com.highcapable.yukihookapi.runtime
 
 import com.highcapable.kavaref.KavaRef.Companion.resolve
@@ -136,6 +138,61 @@ class MemberHookerTest {
         }
         Assert.assertEquals("downstream", (hookers.single() as ChainHookerBridge).intercept(chain))
         Assert.assertEquals(8, chain.calls)
+    }
+
+    @Test
+    fun nullableChainReadsReturnArgumentsOrNullForInvalidReads() {
+        val target = String::class.resolve().firstMethod {
+            name = "startsWith"
+            parameters(String::class, Int::class)
+        }.self
+        val chain = RecordingChain(target, args = listOf("prefix", 2))
+        val chainWithNull = RecordingChain(target, args = listOf(null, 2))
+        val observed = mutableListOf<List<Any?>>()
+        scope.run {
+            target.intercept {
+                observed += listOf(
+                    argOrNull(0), argOrNull<Int>(1),
+                    firstArgOrNull(), firstArgOrNull<CharSequence>(),
+                    lastArgOrNull(), lastArgOrNull<Int>(),
+                    argOrNull(-1), argOrNull<String>(2),
+                    argOrNull<Int>(0), firstArgOrNull<Int>(), lastArgOrNull<String>()
+                )
+                true
+            }
+        }
+
+        val hooker = hookers.single() as ChainHookerBridge
+        hooker.intercept(chain)
+        hooker.intercept(chainWithNull)
+
+        Assert.assertEquals(listOf(
+            listOf("prefix", 2, "prefix", "prefix", 2, 2, null, null, null, null, null),
+            listOf(null, 2, null, null, 2, 2, null, null, null, null, null)
+        ), observed)
+    }
+
+    @Test
+    fun nullableChainReadsHandleAnEmptyInvocation() {
+        val chain = RecordingChain(otherMethod, args = emptyList())
+        var observed: List<Any?>? = null
+        scope.run {
+            otherMethod.intercept {
+                Assert.assertThrows(IndexOutOfBoundsException::class.java) { arg(0) }
+                Assert.assertThrows(IndexOutOfBoundsException::class.java) { firstArg() }
+                Assert.assertThrows(IndexOutOfBoundsException::class.java) { lastArg() }
+                observed = listOf(
+                    argOrNull(0), argOrNull<Int>(0),
+                    firstArgOrNull(), firstArgOrNull<Int>(),
+                    lastArgOrNull(), lastArgOrNull<Int>()
+                )
+                0
+            }
+        }
+
+        (hookers.single() as ChainHookerBridge).intercept(chain)
+
+        Assert.assertEquals(listOf(null, null, null, null, null, null), observed)
     }
 
     @Test
@@ -550,11 +607,11 @@ class MemberHookerTest {
     private class RecordingChain(
         override val member: Member,
         private val downstreamResult: Any? = "downstream",
-        private val downstreamFailure: Throwable? = null
+        private val downstreamFailure: Throwable? = null,
+        override val args: List<Any?> = listOf(1)
     ) : ChainHookerBridge.Chain {
 
         override val instance = "value"
-        override val args = listOf(1)
         var calls = 0
         var forwardedInstance: Any? = null
         var forwardedArgs: Array<out Any?>? = null
