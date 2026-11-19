@@ -50,19 +50,18 @@ object YukiHookModuleCaller {
 
     /**
      * Runs the single framework event registration block for this module process.
-     * @param entry the entry currently running [YukiHookXposedModule.onInit].
      * @param block the runtime's event configuration block.
-     * @throws IllegalStateException if called outside this entry's initialization or more than once.
+     * @throws IllegalStateException if called outside entry initialization or more than once.
      */
-    fun callRegisterFrameworkEvents(entry: YukiHookXposedModule, block: () -> Unit) =
-        XposedModuleRuntime.registerFrameworkEvents(entry, block)
+    fun callRegisterFrameworkEvents(block: () -> Unit) =
+        XposedModuleRuntime.registerFrameworkEvents(block)
 
     /**
-     * Calls [YukiHookXposedModule.onInit] with framework event registration enabled for this entry.
+     * Calls [YukiHookXposedModule.onInit] with module registration enabled on the current thread.
      * @param entry the user entry.
      */
     fun callOnInit(entry: YukiHookXposedModule) =
-        XposedModuleRuntime.createHookEntry(entry) { entry.onInit() }
+        XposedModuleRuntime.initializeEntry(entry)
 
     /**
      * Calls [YukiHookXposedModule.onHook] with the current Xposed module.

@@ -20,7 +20,7 @@
  * This file is created by fankes on 2022/4/30.
  * This file is modified by fankes on 2022/1/10.
  */
-@file:Suppress("unused")
+@file:Suppress("unused", "UnusedReceiverParameter")
 
 package com.highcapable.yukihookapi.hook.xposed.bridge.event
 
@@ -44,7 +44,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
  */
 @RequiresRuntime(YukiHookRuntime.XPOSED_82)
 fun YukiHookXposedModule.registerFrameworkEvents(block: YukiHookXposed82Event.() -> Unit) =
-    YukiHookModuleCaller.callRegisterFrameworkEvents(this) { YukiHookXposed82Event.block() }
+    YukiHookModuleCaller.callRegisterFrameworkEvents { YukiHookXposed82Event.block() }
 
 /**
  * Registers listeners for framework lifecycle events exposed by Xposed Framework API.

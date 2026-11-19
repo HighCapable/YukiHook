@@ -61,7 +61,7 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
     private val retainedValues = RetainedValuesStore()
     private var hookRegistration: HookRegistration? = null
 
-    private val hookEntry = ThreadLocal<YukiHookXposedModule>()
+    private val initializingEntry = ThreadLocal<Boolean>()
     private val registeringFrameworkEvents = ThreadLocal<Boolean>()
     private var isFrameworkEventsRegistered = false
 
@@ -111,12 +111,11 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
     val isHostEnvironment get() = YukiHookBridge.isAvailable && isModuleLoaded
 
     /**
-     * Checks that registration runs inside this entry's `onInit` on the current thread.
-     * @param entry the current [YukiHookXposedModule] entry.
+     * Checks that registration runs during `onInit` on the current thread.
      * @param name the name of the feature being registered.
-     * @throws IllegalStateException if this entry is not being initialized on the current thread.
+     * @throws IllegalStateException if no entry is being initialized on the current thread.
      */
-    fun checkInitializingEntry(entry: YukiHookXposedModule, name: String) = check(hookEntry.get() === entry) {
+    fun checkInitializingEntry(name: String) = check(initializingEntry.get() == true) {
         "$name must be registered in onInit of the current process."
     }
 
@@ -129,17 +128,17 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
     }
 
     /**
-     * Runs the entry's initialization with its registration context bound to this thread.
+     * Runs the entry's `onInit` with registration enabled on this thread.
      * @param entry the current [YukiHookXposedModule] entry.
-     * @param block the initialization block.
      */
-    fun createHookEntry(entry: YukiHookXposedModule, block: () -> Unit) {
-        hookEntry.set(entry)
+    fun initializeEntry(entry: YukiHookXposedModule) {
+        val wasInitializing = initializingEntry.get() == true
+        initializingEntry.set(true)
 
         try {
-            block()
+            entry.onInit()
         } finally {
-            hookEntry.remove()
+            if (!wasInitializing) initializingEntry.remove()
         }
     }
 
@@ -153,12 +152,12 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
 
     /**
      * Registers one framework event configuration block during entry initialization.
-     * @param entry the current [YukiHookXposedModule] entry.
      * @param block the framework event configuration block.
-     * @throws IllegalStateException if called outside this entry's initialization or more than once.
+     * @throws IllegalStateException if called outside entry initialization or more than once.
      */
-    fun registerFrameworkEvents(entry: YukiHookXposedModule, block: () -> Unit) {
-        checkInitializingEntry(entry, "framework events")
+    fun registerFrameworkEvents(block: () -> Unit) {
+        checkInitializingEntry("framework events")
+
         synchronized(this) {
             check(!isFrameworkEventsRegistered) {
                 "Framework events can only be registered once per module process."

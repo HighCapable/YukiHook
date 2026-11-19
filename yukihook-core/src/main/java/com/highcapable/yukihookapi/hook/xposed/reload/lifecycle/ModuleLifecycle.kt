@@ -19,7 +19,7 @@
  *
  * This file is created by fankes on 2026/9/27.
  */
-@file:Suppress("unused")
+@file:Suppress("unused", "UnusedReceiverParameter")
 
 package com.highcapable.yukihookapi.hook.xposed.reload.lifecycle
 
@@ -38,7 +38,7 @@ import com.highcapable.yukihookapi.hook.xposed.bridge.session.ModuleLifecycleMan
  * @param block the lifecycle configuration.
  */
 fun YukiHookXposedModule.registerModuleLifecycle(block: ModuleLifecycle.() -> Unit) {
-    XposedModuleRuntime.checkInitializingEntry(this, "module lifecycle callbacks")
+    XposedModuleRuntime.checkInitializingEntry("module lifecycle callbacks")
 
     ModuleLifecycleManager.register(ModuleLifecycle().apply(block))
 }

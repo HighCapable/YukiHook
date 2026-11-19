@@ -19,7 +19,7 @@
  *
  * This file is created by fankes on 2026/9/6.
  */
-@file:Suppress("unused")
+@file:Suppress("unused", "UnusedReceiverParameter")
 
 package com.highcapable.yukihookapi.hook.xposed.bridge.event
 
@@ -44,7 +44,7 @@ import io.github.libxposed.api.XposedModuleInterface
  */
 @RequiresRuntime(YukiHookRuntime.LIBXPOSED)
 fun YukiHookXposedModule.registerFrameworkEvents(block: YukiHookLibXposedEvent.() -> Unit) =
-    YukiHookModuleCaller.callRegisterFrameworkEvents(this) { YukiHookLibXposedEvent.block() }
+    YukiHookModuleCaller.callRegisterFrameworkEvents { YukiHookLibXposedEvent.block() }
 
 /**
  * Registers listeners for framework lifecycle events exposed by libxposed API.
