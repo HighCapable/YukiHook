@@ -35,6 +35,7 @@ import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.param.PackageParam
 import com.highcapable.yukihookapi.hook.param.context.PackageContext
+import com.highcapable.yukihookapi.hook.xposed.YukiHookXposedModule
 import com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication
 import com.highcapable.yukihookapi.hook.xposed.bridge.XposedModuleRuntime
 import com.highcapable.yukihookapi.hook.xposed.channel.YukiHookDataChannel
@@ -303,8 +304,10 @@ object YukiHook {
     /**
      * Loads the entry point for an Xposed module.
      * @param block the [PackageParam] hook block.
+     * @throws IllegalStateException if called outside [YukiHookXposedModule.onHook].
      */
     fun encase(block: PackageParam.() -> Unit) {
+        XposedModuleRuntime.checkHookLoading()
         isStandalone = false
 
         if (XposedModuleRuntime.isHostEnvironment)
@@ -317,8 +320,10 @@ object YukiHook {
      *
      * An empty [hookers] logs an error and loads nothing.
      * @param hookers the hookers.
+     * @throws IllegalStateException if called outside [YukiHookXposedModule.onHook].
      */
     fun encase(vararg hookers: YukiBaseHooker) {
+        XposedModuleRuntime.checkHookLoading()
         isStandalone = false
 
         if (XposedModuleRuntime.isHostEnvironment)

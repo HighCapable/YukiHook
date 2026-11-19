@@ -84,8 +84,7 @@ object YukiHookModuleCaller {
         val hookEntry = createHookEntry()
         callOnInit(hookEntry)
 
-        XposedModuleRuntime.checkHookLoading()
-        hookEntry.onHook()
+        XposedModuleRuntime.loadEntryHooks(hookEntry)
     }.onFailure { YLog.innerE("YukiHook failed to initialize the module", it) }.isSuccess
 
     /**
@@ -145,10 +144,7 @@ object YukiHookModuleCaller {
 
         callOnInit(entry)
         XposedModuleRuntime.onRestoreUserState(saved)
-
-        XposedModuleRuntime.checkHookLoading()
-        entry.onHook()
-
+        XposedModuleRuntime.loadEntryHooks(entry)
         XposedModuleRuntime.onRestoreComponents(appInfo, saved)
     }.onFailure {
         onFailure(it)

@@ -61,9 +61,14 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
     private val retainedValues = RetainedValuesStore()
     private var hookRegistration: HookRegistration? = null
 
-    private val initializingEntry = ThreadLocal<Boolean>()
+    private val entryPhase = ThreadLocal<EntryPhase>()
     private val registeringFrameworkEvents = ThreadLocal<Boolean>()
     private var isFrameworkEventsRegistered = false
+
+    /**
+     * The current entry phase of the module instance.
+     */
+    private enum class EntryPhase { INIT, HOOK }
 
     /** Whether the Xposed module has been loaded. */
     private var isModuleLoaded = false
@@ -115,32 +120,29 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
      * @param name the name of the feature being registered.
      * @throws IllegalStateException if no entry is being initialized on the current thread.
      */
-    fun checkInitializingEntry(name: String) = check(initializingEntry.get() == true) {
+    fun checkInitializingEntry(name: String) = check(entryPhase.get() == EntryPhase.INIT) {
         "$name must be registered in onInit of the current process."
     }
 
     /**
-     * Checks that package hooks have not been declared before `onHook` runs.
-     * @throws IllegalStateException if a package callback was already registered.
+     * Checks that module hook declarations run during `onHook` on the current thread.
+     * @throws IllegalStateException if the current thread is outside `onHook`.
      */
-    fun checkHookLoading() = check(packageParamCallback == null) {
-        "Do not load hookers in onInit."
+    fun checkHookLoading() = check(entryPhase.get() == EntryPhase.HOOK) {
+        "Declare module hooks in onHook."
     }
 
     /**
      * Runs the entry's `onInit` with registration enabled on this thread.
      * @param entry the current [YukiHookXposedModule] entry.
      */
-    fun initializeEntry(entry: YukiHookXposedModule) {
-        val wasInitializing = initializingEntry.get() == true
-        initializingEntry.set(true)
+    fun initializeEntry(entry: YukiHookXposedModule) = withEntryPhase(EntryPhase.INIT) { entry.onInit() }
 
-        try {
-            entry.onInit()
-        } finally {
-            if (!wasInitializing) initializingEntry.remove()
-        }
-    }
+    /**
+     * Runs the entry's `onHook` with module hook declarations enabled on this thread.
+     * @param entry the current [YukiHookXposedModule] entry.
+     */
+    fun loadEntryHooks(entry: YukiHookXposedModule) = withEntryPhase(EntryPhase.HOOK) { entry.onHook() }
 
     /**
      * Checks that a framework event listener is being configured inside the registration block.
@@ -286,6 +288,17 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
     override fun onAbortRestoreModule() = ModuleLifecycleManager.abortRestore()
 
     override fun onRetireFailedRestore() = ModuleLifecycleManager.retire()
+
+    private inline fun withEntryPhase(phase: EntryPhase, block: () -> Unit) {
+        val previous = entryPhase.get()
+        entryPhase.set(phase)
+
+        try {
+            block()
+        } finally {
+            if (previous == null) entryPhase.remove() else entryPhase.set(previous)
+        }
+    }
 
     private fun reportProcessName(name: String) {
         reportedProcess = Process.myPid() to name

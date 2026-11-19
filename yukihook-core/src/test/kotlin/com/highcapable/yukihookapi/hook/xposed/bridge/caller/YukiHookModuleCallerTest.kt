@@ -21,10 +21,14 @@
  */
 package com.highcapable.yukihookapi.hook.xposed.bridge.caller
 
+import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.hook.xposed.YukiHookXposedModule
 import com.highcapable.yukihookapi.hook.xposed.reload.lifecycle.registerModuleLifecycle
 import org.junit.Assert
 import org.junit.Test
+import java.util.concurrent.FutureTask
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 /**
  * Checks lifecycle registration from a shared hook entry.
@@ -46,5 +50,42 @@ class YukiHookModuleCallerTest {
 
         Assert.assertSame(configurationFailure, failure)
         Assert.assertThrows(IllegalStateException::class.java) { sharedEntry.registerModuleLifecycle {} }
+    }
+
+    @Test
+    fun registrationOnAnotherThreadIsRejectedWhileOnInitIsRunning() {
+        val entry = object : YukiHookXposedModule {
+            override fun onInit() {
+                val registration = FutureTask {
+                    runCatching { registerModuleLifecycle { error("Configuration ran on the wrong thread") } }.exceptionOrNull()
+                }
+                thread(isDaemon = true) { registration.run() }
+
+                Assert.assertEquals(
+                    "module lifecycle callbacks must be registered in onInit of the current process.",
+                    registration.get(5, TimeUnit.SECONDS)?.message
+                )
+            }
+
+            override fun onHook() = Unit
+        }
+
+        YukiHookModuleCaller.callOnInit(entry)
+    }
+
+    @Test
+    fun moduleEncaseRejectsBothOverloadsOutsideOnHook() {
+        val entry = object : YukiHookXposedModule {
+            override fun onInit() {
+                val failure = Assert.assertThrows(IllegalStateException::class.java) { YukiHook.encase {} }
+                Assert.assertEquals("Declare module hooks in onHook.", failure.message)
+            }
+
+            override fun onHook() = Unit
+        }
+
+        YukiHookModuleCaller.callOnInit(entry)
+        val failure = Assert.assertThrows(IllegalStateException::class.java) { YukiHook.encase(hookers = emptyArray()) }
+        Assert.assertEquals("Declare module hooks in onHook.", failure.message)
     }
 }
