@@ -153,12 +153,11 @@ Both the module and the host need to enable debug log recording, for details ple
 
 ## Respond to Callback Events
 
-Only examples in the module are listed here. The same `key` is never allowed to be created twice for **the same host**, but the same `key` is allowed for **different hosts**.
+The examples below run in the module. **Different hosts** can use the same `key`.
 
 ::: danger
 
-In the module and hosts, the callback event of each `key` of a `dataChannel` **cannot be created twice**. If it is, the earlier callback is replaced by the new one.
-In the module, it cannot be repeated in the same `Activity`, but the same `key` is allowed in different `Activity` instances.
+Within the same listener scope, registering a callback of the same kind for the same host and `key` replaces the earlier callback. In the module, each `Activity` instance has its own scope. Other contexts use a process-wide scope by default.
 
 :::
 
@@ -216,13 +215,15 @@ In summary, callback events B, C, D, E and F can all be created.
 
 ::: danger
 
-A callback event with the same `key` is only called in the `Activity` of the module that is currently showing. For example, for `foo` above, if `OtherActivity` is showing, `foo` in `MainActivity` is not called.
+In each task, the module `Activity` that most recently resumed can receive matching broadcasts, even after the task moves to the background.
+When another module `Activity` resumes in the same task, the previous instance stops receiving until it resumes again.
+Separate tasks, including those in split-screen, receive independently. Destroying an instance removes its listeners.
 
-When the same `key` is registered with `dataChannel` in different `Fragment` instances of the same `Activity`, they are still called together in the current `Activity`.
+Listeners registered from an `Application`, `Service`, or other context without an `Activity` can receive matching broadcasts while the process is alive.
+Use `ChannelPriority` to set additional callback conditions.
 
-In the module, you can use `dataChannel` in an `Activity`, `Application`, `Service` and so on. Outside an `Activity`, each callback event is called immediately, and you can use `ChannelPriority` to manage them.
-
-To use `dataChannel` in a `Fragment`, use `activity?.dataChannel(...)` or `requireActivity().dataChannel(...)`.
+Call `dataChannel(packageName)` directly in `Fragment.onViewCreated` to let different fragments in the same activity listen for the same `key`.
+Obtain the channel and register listeners on the main thread. Listeners are removed when the fragment's view is destroyed.
 
 :::
 
@@ -233,28 +234,11 @@ For example, when one `Activity` hosts multiple `Fragment` instances, this solve
 > The following example
 
 ```kotlin
-open class BaseFragment : Fragment() {
-
-    // Marks that the current Fragment has gone through the onResume lifecycle.
-    var resumed = false
-
-    override fun onResume() {
-        super.onResume()
-        resumed = true
-    }
-
-    override fun onPause() {
-        super.onPause()
-        resumed = false
-    }
-}
-
-class MainFragment : BaseFragment() {
+class MainFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        // Use the custom resumed with isVisible to check that the current Fragment is showing.
-        activity?.dataChannel("io.github.myapp1")
-            ?.wait("foo", ChannelPriority { resumed && isVisible }) {
+        dataChannel("io.github.myapp1")
+            .wait("foo", ChannelPriority { isResumed && isVisible }) {
                 // Your code here.
             }
     }

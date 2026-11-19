@@ -153,11 +153,11 @@ dataChannel("io.github.myapp").obtainLoggerInMemoryData { data ->
 
 ## 响应回调事件
 
-这里只列出了在模块中使用的例子，在**同一个宿主**中相同的 `key` 始终不允许重复创建，但**不同的宿主**中允许存在相同的 `key`。
+这里只列出了在模块中使用的例子。**不同的宿主**可以使用相同的 `key`。
 
 ::: danger
 
-在模块和宿主中，每一个 `dataChannel` 对应的 `key` 的回调事件**都不允许重复创建**，若重复，之前的回调事件会被新增加的回调事件替换，若在模块中使用，在同一个 `Activity` 中不可以重复，不同的 `Activity` 中相同的 `key` 允许重复。
+同一个宿主、同一个 `key` 的同类回调在同一监听范围内重复注册时，后注册的回调会替换先前的回调。模块中的每个 `Activity` 实例都有各自的监听范围，其余 `Context` 默认使用进程级的监听范围。
 
 :::
 
@@ -215,13 +215,11 @@ class OtherActivity : AppCompatActivity() {
 
 ::: danger
 
-一个相同 `key` 的回调事件只会回调当前模块正在显示的 `Activity` 中注册的回调事件，例如上述中的 `foo`，如果 `OtherActivity` 正在显示，那么 `MainActivity` 中的 `foo` 就不会被回调。
+每个任务中，最近一次进入 `RESUMED` 状态的模块 `Activity` 可以接收匹配的广播，即使任务已退到后台。同一任务切换到另一个模块 `Activity` 后，原实例不再接收，直到它再次进入 `RESUMED` 状态。不同任务（包括分屏中的任务）可以各自接收。实例销毁时会移除其监听。
 
-相同的 `key` 在同一个 `Activity` 不同的 `Fragment` 中注册 `dataChannel`，它们依然会在当前 `Activity` 中同时被回调。
+在模块中，`Application`、`Service` 等不关联 `Activity` 的监听可在进程存活时接收匹配的广播，仍可通过 `ChannelPriority` 设置回调条件。
 
-在模块中，你可以在 `Activity`、`Application` 以及 `Service` 等地方使用 `dataChannel`，在 `Activity` 以外的地方使用时每个回调事件都会即时回调，此时你可以使用 `ChannelPriority` 进行管理。
-
-若要在 `Fragment` 中使用 `dataChannel`，请使用 `activity?.dataChannel(...)` 或 `requireActivity().dataChannel(...)`。
+在 `Fragment` 的 `onViewCreated` 中直接使用 `dataChannel(packageName)`，同一 `Activity` 中的不同 `Fragment` 就可以各自监听相同的 `key`。请在主线程获取通道并注册监听，视图销毁时会移除对应监听。
 
 :::
 
@@ -232,28 +230,11 @@ class OtherActivity : AppCompatActivity() {
 > 示例如下
 
 ```kotlin
-open class BaseFragment : Fragment() {
-
-    // 标识当前 Fragment 经过了 onResume 生命周期
-    var resumed = false
-
-    override fun onResume() {
-        super.onResume()
-        resumed = true
-    }
-
-    override fun onPause() {
-        super.onPause()
-        resumed = false
-    }
-}
-
-class MainFragment : BaseFragment() {
+class MainFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        // 使用自定义的 resumed 结合 isVisible 条件判断当前 Fragment 正处于显示状态
-        activity?.dataChannel("io.github.myapp1")
-            ?.wait("foo", ChannelPriority { resumed && isVisible }) {
+        dataChannel("io.github.myapp1")
+            .wait("foo", ChannelPriority { isResumed && isVisible }) {
                 // Your code here.
             }
     }
