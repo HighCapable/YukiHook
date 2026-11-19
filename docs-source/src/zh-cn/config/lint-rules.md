@@ -32,6 +32,7 @@
 | [InvalidFieldHookTarget](repo://tree/1.x/yukihook-core-lint/src/main/java/com/highcapable/yukihookapi/core/lint/detector/MemberHookerDetector.kt)            | `CORRECTNESS`  | `ERROR`         | `10`   | Field used as a hook target                                             |
 | [UseModuleApplication](repo://tree/1.x/yukihook-core-lint/src/main/java/com/highcapable/yukihookapi/core/lint/detector/ModuleUsageDetector.kt)               | `CORRECTNESS`  | `WARNING`       | `5`    | Inherit ModuleApplication to enable full functionality                  |
 | [UseHookInvocationApi](repo://tree/1.x/yukihook-core-lint/src/main/java/com/highcapable/yukihookapi/core/lint/detector/ModuleUsageDetector.kt)               | `PRODUCTIVITY` | `INFORMATIONAL` | `5`    | Use HookInvocation's API instead of casting                             |
+| [UseHookBlock](repo://tree/1.x/yukihook-core-lint/src/main/java/com/highcapable/yukihookapi/core/lint/detector/ModuleUsageDetector.kt)                       | `PRODUCTIVITY` | `INFORMATIONAL` | `5`    | Use a hook configuration block instead of apply                         |
 | [KavaRefWithoutHostClassLoader](repo://tree/1.x/yukihook-core-lint/src/main/java/com/highcapable/yukihookapi/core/lint/detector/KavaRefFallbackDetector.kt)  | `CORRECTNESS`  | `WARNING`       | `5`    | KavaRef class loaded without the host class loader                      |
 
 </div>
