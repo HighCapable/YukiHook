@@ -131,6 +131,8 @@ hook {
         lastArg().get<T>()
         // Get the argument at any index as T, 2 is used here as an example.
         arg(2).get<T>()
+        // Read an argument as T, returning null if it is missing, null, or has a different type.
+        arg(2).getOrNull<T>()
         // Set the argument at any index, 2 is used here as an example.
         arg(2).set(...)
         // Get the data storage of the current callback scope.
@@ -262,6 +264,8 @@ intercept {
     args
     // Get the argument at any index as T, 2 is used here as an example.
     arg<T>(2)
+    // Read an argument as T, returning null if it is missing, null, or has a different type.
+    argOrNull<T>(2)
     // Continue the chain with the current arguments.
     proceed()
     // Continue the chain with new arguments.
