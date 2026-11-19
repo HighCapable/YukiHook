@@ -46,8 +46,12 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiModifierListOwner
+import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
+import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.psi.KtBlockExpression
+import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtClassInitializer
 import org.jetbrains.kotlin.psi.KtContainerNode
 import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
@@ -80,6 +84,7 @@ import org.jetbrains.uast.UTypeReferenceExpression
 import org.jetbrains.uast.UastBinaryOperator
 import org.jetbrains.uast.UastPrefixOperator
 import org.jetbrains.uast.skipParenthesizedExprDown
+import org.jetbrains.uast.toUElementOfType
 
 class RuntimeRequirementDetector : Detector(), Detector.UastScanner {
 
@@ -336,19 +341,41 @@ class RuntimeRequirementDetector : Detector(), Detector.UastScanner {
         )
 
         /** With [negated], checks a condition whose failure means the runtime is [runtime], such as `runtime != X`. */
-        private fun UExpression.requiresRuntime(runtime: String, negated: Boolean): Boolean {
+        private fun UExpression.requiresRuntime(runtime: String, negated: Boolean, getters: Set<KtProperty> = emptySet()): Boolean {
             val expression = skipParenthesizedExprDown()
             if (expression is UPrefixExpression && expression.operator == UastPrefixOperator.LOGICAL_NOT)
-                return expression.operand.requiresRuntime(runtime, !negated)
-            if (expression !is UBinaryExpression) return false
+                return expression.operand.requiresRuntime(runtime, !negated, getters)
+            if (expression is UQualifiedReferenceExpression && (expression.selector as? UCallExpression)?.isBooleanNot() == true)
+                return expression.receiver.requiresRuntime(runtime, !negated, getters)
+            if (expression !is UBinaryExpression) {
+                val method = (expression as? UResolvable)?.resolve() as? PsiMethod ?: return false
+                if (!method.hasModifierProperty(PsiModifier.FINAL) && !method.hasModifierProperty(PsiModifier.PRIVATE)) return false
+                val property = when (val declaration = method.navigationElement) {
+                    is KtProperty -> declaration
+                    is KtPropertyAccessor -> declaration.property
+                    else -> return false
+                }
+                if (property.isVar || property in getters) return false
+                val getter = property.getter?.takeUnless { it.hasBlockBody() } ?: return false
+                return getter.bodyExpression.toUElementOfType<UExpression>()?.requiresRuntime(runtime, negated, getters + property) == true
+            }
             if (expression.operator == joinOperator(negated))
-                return expression.leftOperand.requiresRuntime(runtime, negated) || expression.rightOperand.requiresRuntime(runtime, negated)
+                return expression.leftOperand.requiresRuntime(runtime, negated, getters) ||
+                    expression.rightOperand.requiresRuntime(runtime, negated, getters)
 
             val operators = if (negated)
                 listOf(UastBinaryOperator.NOT_EQUALS, UastBinaryOperator.IDENTITY_NOT_EQUALS)
             else listOf(UastBinaryOperator.EQUALS, UastBinaryOperator.IDENTITY_EQUALS)
 
             return expression.operator in operators && isRuntimeEquality(expression.leftOperand, expression.rightOperand, runtime)
+        }
+
+        private fun UCallExpression.isBooleanNot(): Boolean {
+            if (methodName != "not") return false
+            val source = sourcePsi as? KtCallExpression ?: return false
+            return source.analyzeOrNull {
+                source.resolveToCall()?.singleFunctionCallOrNull()?.symbol?.callableId?.asSingleFqName()?.asString() == "kotlin.Boolean.not"
+            } == true
         }
 
         private fun isRuntimeEquality(first: UExpression, second: UExpression, runtime: String) = when {

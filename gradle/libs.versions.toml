@@ -86,6 +86,7 @@ androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayo
 junit = { module = "junit:junit", version.ref = "junit" }
 android-lint-api = { group = "com.android.tools.lint", name = "lint-api", version.ref = "android-lint" }
 android-lint-checks = { group = "com.android.tools.lint", name = "lint-checks", version.ref = "android-lint" }
+android-lint-tests = { group = "com.android.tools.lint", name = "lint-tests", version.ref = "android-lint" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-test-espresso-core" }

@@ -24,12 +24,14 @@ package com.highcapable.yukihookapi.core.lint.detector
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.ConstantEvaluator
+import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.LintFix
 import com.android.tools.lint.detector.api.Location
+import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.highcapable.yukihookapi.core.lint.DeclaredSymbol
@@ -63,6 +65,7 @@ import com.intellij.psi.PsiVariable
 import com.intellij.psi.PsiWildcardType
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiUtil
+import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
@@ -71,6 +74,7 @@ import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaFlexibleType
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtBlockExpression
@@ -111,6 +115,7 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
 
         private const val CONTEXT_CLASS = "android.content.Context"
         private const val MODULE_ENTRY_CLASS = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.xposed.YukiHookXposedModule"
+        private const val LEGACY_MODULE_ENTRY_CLASS = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.xposed.proxy.IYukiHookXposedInit"
         private const val PACKAGE_PARAM_CLASS = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.PackageParam"
         private const val BASE_HOOKER_CLASS = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.entity.YukiBaseHooker"
         private const val YUKIHOOK_CLASS = "${DeclaredSymbol.CORE_PACKAGE_NAME}.YukiHook"
@@ -158,6 +163,8 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
 
         private val SYSTEM_FRAMEWORK_NAMES = setOf("android", "system")
 
+        private const val EVENT_PACKAGE = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.xposed.bridge.event"
+
         private const val STRING_CLASS = "java.lang.String"
         private const val CLASS_CLASS = "java.lang.Class"
         private const val ITERABLE_CLASS = "java.lang.Iterable"
@@ -191,8 +198,14 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
         )
 
         private val EVENT_REGISTRATIONS = setOf(
-            "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.xposed.bridge.event.YukiHookLibXposedEventKt",
-            "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.xposed.bridge.event.YukiHookXposed82EventKt"
+            "$EVENT_PACKAGE.YukiHookLibXposedEventKt",
+            "$EVENT_PACKAGE.YukiHookXposed82EventKt"
+        )
+
+        private val FRAMEWORK_CALLBACK_OWNERS = setOf(
+            "$EVENT_PACKAGE.YukiHookXposed82Event",
+            "$EVENT_PACKAGE.v101.YukiHookLibXposed101EventKt",
+            "$EVENT_PACKAGE.v102.YukiHookLibXposed102EventKt"
         )
 
         val MODULE_REGISTRATION_OUTSIDE_ON_INIT_ISSUE = Issue.create(
@@ -346,7 +359,20 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
     }
 
     private enum class Phase { INIT, HOOK, PACKAGE, OUTSIDE, UNKNOWN }
-    private enum class Execution { IMMEDIATE, PACKAGE, UNKNOWN }
+
+    private enum class Execution {
+        IMMEDIATE,
+        PACKAGE,
+        DEFERRED,
+        UNKNOWN;
+
+        fun phases(incoming: Set<Phase>) = when (this) {
+            IMMEDIATE -> incoming
+            PACKAGE -> setOf(Phase.PACKAGE)
+            DEFERRED -> setOf(Phase.OUTSIDE)
+            UNKNOWN -> if (incoming.isEmpty()) emptySet() else setOf(Phase.UNKNOWN)
+        }
+    }
 
     private enum class LoadKind { ALWAYS, PACKAGE, ANY_PACKAGE, SYSTEM, ZYGOTE }
     private enum class LambdaExecution { DECLARATION, INLINE, DEFERRED }
@@ -398,24 +424,56 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
         val insideEncase: Boolean
     ) {
 
-        fun phases(functionPhases: Map<PsiElement, Set<Phase>>): Set<Phase> {
-            val callers = caller?.let { functionPhases[it].orEmpty() } ?: setOf(Phase.OUTSIDE)
-            return callers.mapTo(mutableSetOf()) { phase ->
-                when (execution) {
-                    Execution.IMMEDIATE -> phase
-                    Execution.PACKAGE -> Phase.PACKAGE
-                    Execution.UNKNOWN -> if (phase == Phase.PACKAGE || phase == Phase.OUTSIDE) phase else Phase.UNKNOWN
+        fun phases(functionPhases: Map<PsiElement, Set<Phase>>, fallback: Set<Phase>) =
+            execution.phases(if (caller == null) setOf(Phase.OUTSIDE) else functionPhases[caller] ?: fallback)
+    }
+
+    private data class PhaseEdge(
+        val caller: PsiElement?,
+        val target: PsiElement,
+        val execution: Execution
+    )
+
+    private class PhaseAnalysis {
+
+        val roots = mutableMapOf<PsiElement, MutableSet<Phase>>()
+        val edges = mutableListOf<PhaseEdge>()
+        val abstractOverrides = mutableMapOf<PsiElement, MutableSet<PsiElement>>()
+        val checks = mutableListOf<(Map<PsiElement, Set<Phase>>, Set<Phase>) -> Unit>()
+
+        fun report(isFullAnalysis: Boolean) {
+            var changed = true
+            while (changed) {
+                changed = false
+                edges.forEach { (caller, target, execution) ->
+                    val incoming = if (caller == null) setOf(Phase.OUTSIDE) else roots[caller].orEmpty()
+                    val phases = execution.phases(incoming)
+                    if (phases.isEmpty()) return@forEach
+
+                    if (roots.getOrPut(target) { mutableSetOf() }.addAll(phases)) changed = true
+                    abstractOverrides[target]?.forEach {
+                        if (roots.getOrPut(it) { mutableSetOf() }.addAll(phases)) changed = true
+                    }
                 }
             }
+
+            val fallback = setOf(if (isFullAnalysis) Phase.OUTSIDE else Phase.UNKNOWN)
+            checks.forEach { it(roots, fallback) }
         }
     }
 
     private var projectSources: List<File>? = null
+    private val phaseAnalyses = mutableMapOf<Project, PhaseAnalysis>()
+
     private val sourceTexts = mutableMapOf<File, String>()
     private val parsedSources = mutableMapOf<File, UFile?>()
     private val sourceHookerLoads = mutableMapOf<File, List<Pair<String?, Set<String>>>>()
 
     override fun getApplicableUastTypes() = listOf(UFile::class.java)
+
+    override fun afterCheckEachProject(context: Context) {
+        phaseAnalyses.remove(context.project)?.report(Scope.ALL_JAVA_FILES in context.scope)
+    }
 
     override fun createUastHandler(context: JavaContext) = context.createExternalOnlyUastHandler(object : UElementHandler() {
 
@@ -427,9 +485,7 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
 
         override fun visitFile(node: UFile) {
             val calls = mutableListOf<CallSite>()
-            val roots = mutableMapOf<PsiElement, Phase>()
-            val functions = mutableSetOf<PsiElement>()
-            val references = mutableSetOf<PsiElement>()
+            val analysis = phaseAnalyses.getOrPut(context.project) { PhaseAnalysis() }
             val retainedKeys = mutableMapOf<RetentionScope, MutableMap<String, MutableList<RetentionSite>>>()
             val contributions = mutableMapOf<UBlockExpression, MutableList<KeyContribution>>()
 
@@ -437,6 +493,12 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
 
                 override fun visitMethod(node: UMethod): Boolean {
                     val owner = node.javaPsi.containingClass ?: return false
+                    val function = node.sourcePsi ?: node.javaPsi.navigationElement
+                    if (context.evaluator.extendsClass(owner, MODULE_ENTRY_CLASS, false))
+                        node.javaPsi.findSuperMethods().forEach { parent ->
+                            if (parent.hasModifierProperty(PsiModifier.ABSTRACT))
+                                analysis.abstractOverrides.getOrPut(parent.navigationElement) { mutableSetOf() }.add(function)
+                        }
                     val phase = when {
                         context.evaluator.extendsClass(owner, PACKAGE_PARAM_CLASS, false) -> Phase.PACKAGE
                         (node.sourcePsi as? KtNamedFunction)?.receiverTypeReference != null &&
@@ -449,10 +511,7 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
                         }
                         else -> return false
                     }
-
-                    val function = node.sourcePsi ?: node.javaPsi.navigationElement
-                    roots[function] = phase
-                    functions.add(function)
+                    analysis.roots.getOrPut(function) { mutableSetOf() }.add(phase)
 
                     return false
                 }
@@ -460,16 +519,16 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
                 override fun visitCallExpression(node: UCallExpression): Boolean {
                     val method = node.resolve()
                     val caller = node.enclosingFunction()
-                    val target = node.functionTarget(context)
-                    if (caller != null) functions.add(caller)
-                    if (target != null) functions.add(target)
+                    val target = node.functionTarget()
+                    val execution = node.execution(caller)
+                    if (target != null) analysis.edges.add(PhaseEdge(caller, target, execution))
 
                     calls.add(CallSite(
                         node = node,
                         method = method,
                         caller = caller,
-                        target = target,
-                        execution = node.execution(caller),
+                        target = target?.takeIf { it.containingFile?.virtualFile?.path == context.file.path },
+                        execution = execution,
                         entryOwned = node.isEntryOwned(),
                         insideEncase = node.insideEncase()
                     ))
@@ -493,9 +552,17 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
                 }
 
                 override fun visitCallableReferenceExpression(node: UCallableReferenceExpression): Boolean {
-                    val target = node.functionTarget(context) ?: return false
-                    functions.add(target)
-                    references.add(target)
+                    val target = node.functionTarget() ?: return false
+                    val call = generateSequence(node.uastParent) { it.uastParent }.filterIsInstance<UCallExpression>().firstOrNull()
+                    when (call?.argumentExecution(node)) {
+                        Execution.IMMEDIATE -> {
+                            val caller = call.enclosingFunction()
+                            analysis.edges.add(PhaseEdge(caller, target, call.execution(caller)))
+                        }
+                        Execution.PACKAGE -> analysis.roots.getOrPut(target) { mutableSetOf() }.add(Phase.PACKAGE)
+                        Execution.DEFERRED -> analysis.roots.getOrPut(target) { mutableSetOf() }.add(Phase.OUTSIDE)
+                        else -> analysis.roots.getOrPut(target) { mutableSetOf() }.add(Phase.UNKNOWN)
+                    }
 
                     return false
                 }
@@ -520,65 +587,38 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
                     if (call.caller in appLifecycleReachable && appLifecycleReachable.add(target)) appLifecycleChanged = true
                 }
             }
+
             calls.forEach { call -> reportNonReplayableInAppLifecycle(call.node, call.method, call.caller, appLifecycleReachable) }
-
-            val phases = roots.mapValuesTo(mutableMapOf()) { mutableSetOf(it.value) }
-            references.forEach { phases.getOrPut(it) { mutableSetOf() }.add(Phase.UNKNOWN) }
-
-            // Resolve known entry paths before marking unreferenced functions as outside the lifecycle.
-            fun propagate() {
-                var changed = true
-                while (changed) {
-                    changed = false
-                    calls.forEach { call ->
-                        val target = call.target ?: return@forEach
-                        val targetPhases = phases.getOrPut(target) { mutableSetOf() }
-                        if (targetPhases.addAll(call.phases(phases))) changed = true
-                    }
-                }
-            }
-
-            propagate()
-            functions.filter { phases[it].isNullOrEmpty() }.forEach {
-                phases.getOrPut(it) { mutableSetOf() }.add(Phase.OUTSIDE)
-            }
-            propagate()
-
-            val reachable = roots.keys.toMutableSet()
-
-            var changed = true
-            while (changed) {
-                changed = false
-                calls.forEach { call ->
-                    val target = call.target ?: return@forEach
-                    if (call.caller in reachable && reachable.add(target)) changed = true
-                }
-            }
-
             calls.forEach { call ->
                 val method = call.method ?: return@forEach
-                val callPhases = call.phases(phases)
-                if (!method.isHookLoading() && !call.entryOwned && call.caller !in reachable &&
-                    Phase.PACKAGE !in callPhases && !call.insideEncase) return@forEach
-
-                val message = when {
-                    method.isEncase() && call.insideEncase -> "Do not nest `encase` inside another `encase`"
-                    method.isEncase() && Phase.PACKAGE in callPhases -> "Do not call `encase` from a `PackageParam` context"
-                    method.isHookLoading() && Phase.INIT in callPhases -> "`encase` must be called from `onHook`"
-                    method.isHookLoading() && Phase.OUTSIDE in callPhases -> "`encase` must be called from `onHook` of the current module entry"
-                    method.isModuleRegistration() && callPhases.any { it == Phase.HOOK || it == Phase.PACKAGE || it == Phase.OUTSIDE } ->
-                        "`${call.node.methodName}` must be called from `onInit` of the current module entry"
-                    else -> return@forEach
-                }
-
-                context.report(
-                    issue = if (method.isModuleRegistration()) MODULE_REGISTRATION_OUTSIDE_ON_INIT_ISSUE else INVALID_MODULE_HOOK_LOADING_ISSUE,
-                    scope = call.node,
-                    location = context.getLocation(call.node.outermostQualifiedExpression()),
-                    message = message,
-                    quickfixData = call.node.deleteCallFix()
-                )
+                if (method.isEncase() || method.isModuleRegistration())
+                    analysis.checks.add { phases, fallback -> reportPhase(call, method, phases, fallback) }
             }
+        }
+
+        private fun reportPhase(call: CallSite, method: PsiMethod, phases: Map<PsiElement, Set<Phase>>, fallback: Set<Phase>) {
+            val unresolvedOverride = (call.caller as? KtNamedFunction)?.hasModifier(KtTokens.OVERRIDE_KEYWORD) == true
+            val callPhases = call.phases(phases, if (unresolvedOverride) setOf(Phase.UNKNOWN) else fallback)
+            val message = when {
+                method.isEncase() && call.insideEncase -> "Do not nest `encase` inside another `encase`"
+                method.isEncase() && Phase.PACKAGE in callPhases -> "Do not call `encase` from a `PackageParam` context"
+                method.isHookLoading() && Phase.INIT in callPhases -> "`encase` must be called from `onHook`"
+                method.isHookLoading() && Phase.OUTSIDE in callPhases -> "`encase` must be called from `onHook` of the current module entry"
+                method.isModuleRegistration() && callPhases.any { it == Phase.HOOK || it == Phase.PACKAGE || it == Phase.OUTSIDE } &&
+                    (call.entryOwned || call.caller == null || call.caller in phases || call.execution != Execution.IMMEDIATE) ->
+                    "`${call.node.methodName}` must be called from `onInit` of the current module entry"
+                else -> return
+            }
+
+            val registration = method.isModuleRegistration()
+            val validPhase = if (registration) Phase.INIT else Phase.HOOK
+            context.report(
+                issue = if (registration) MODULE_REGISTRATION_OUTSIDE_ON_INIT_ISSUE else INVALID_MODULE_HOOK_LOADING_ISSUE,
+                scope = call.node,
+                location = context.getLocation(call.node.outermostQualifiedExpression()),
+                message = message,
+                quickfixData = if (validPhase in callPhases || Phase.UNKNOWN in callPhases) null else call.node.deleteCallFix()
+            )
         }
 
         private fun reportRetainedValue(
@@ -1165,19 +1205,24 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
                 val type = lambda.expressionType as? KaFunctionType
                 if ((type?.receiverType as? KaClassType)?.classId == PACKAGE_PARAM_CLASS_ID) return@analyzeOrNull LambdaExecution.DECLARATION
 
-                // Labels and parentheses wrap the lambda inside its argument.
-                val argument = generateSequence(lambda.parent) { it.parent }
-                    .firstOrNull { it !is KtLabeledExpression && it !is KtParenthesizedExpression } as? KtValueArgument
-                    ?: return@analyzeOrNull LambdaExecution.DEFERRED
-                val call = argument.getStrictParentOfType<KtCallElement>()?.resolveToCall()?.singleFunctionCallOrNull()
-                    ?: return@analyzeOrNull null
-                val parameter = (call.valueArgumentMapping[lambda]
-                    ?: argument.getArgumentExpression()?.let { call.valueArgumentMapping[it] })?.symbol
-                val function = call.symbol as? KaNamedFunctionSymbol
-                if (function?.isInline == true && parameter != null && !parameter.isNoinline && !parameter.isCrossinline)
-                    LambdaExecution.INLINE
-                else LambdaExecution.DEFERRED
+                when (isInlineArgument(lambda)) {
+                    true -> LambdaExecution.INLINE
+                    false -> LambdaExecution.DEFERRED
+                    null -> null
+                }
             }
+        }
+
+        private fun KaSession.isInlineArgument(expression: KtExpression): Boolean? {
+            // Labels and parentheses wrap the expression inside its argument.
+            val argument = generateSequence(expression.parent) { it.parent }
+                .firstOrNull { it !is KtLabeledExpression && it !is KtParenthesizedExpression } as? KtValueArgument ?: return false
+            val call = argument.getStrictParentOfType<KtCallElement>()?.resolveToCall()?.singleFunctionCallOrNull() ?: return null
+            val parameter = (call.valueArgumentMapping[expression]
+                ?: argument.getArgumentExpression()?.let { call.valueArgumentMapping[it] })?.symbol
+            val function = call.symbol as? KaNamedFunctionSymbol
+
+            return function?.isInline == true && parameter != null && !parameter.isNoinline && !parameter.isCrossinline
         }
 
         private fun UCallExpression.mutableSnapshotProblem(): RetainedProblem? {
@@ -1226,10 +1271,10 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
 
                 val enclosingNode = generateSequence(parent.uastParent) { it.uastParent }
                     .filterIsInstance<UCallExpression>().firstOrNull()
-                val enclosingCall = enclosingNode?.resolve()
-                when {
-                    enclosingNode?.hasPackageParamBlock(parent) == true -> packageContext = true
-                    enclosingCall?.isModuleRegistration() == true -> Unit
+                when (enclosingNode?.argumentExecution(parent)) {
+                    Execution.DEFERRED -> return Execution.DEFERRED
+                    Execution.PACKAGE -> packageContext = true
+                    Execution.IMMEDIATE -> Unit
                     else -> unknown = true
                 }
             }
@@ -1241,13 +1286,31 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
             }
         }
 
-        private fun UCallExpression.hasPackageParamBlock(lambda: ULambdaExpression): Boolean {
-            val parameters = resolve()?.parameterList?.parameters ?: return false
-            return parameters.indices.any { index ->
-                parameters[index].type.containsPackageParam() &&
-                    getArgumentForParameter(index)?.sourcePsi == lambda.sourcePsi
+        private fun UCallExpression.argumentExecution(argument: UExpression): Execution {
+            val method = resolve() ?: return Execution.UNKNOWN
+            val source = argument.sourcePsi as? KtExpression ?: return Execution.UNKNOWN
+            val index = method.parameterList.parameters.indices.firstOrNull {
+                getArgumentForParameter(it)?.skipParenthesizedExprDown()?.sourcePsi == source
             }
+            if (index != null) {
+                if (method.isDeferredEntryCallback()) return Execution.DEFERRED
+                if (method.isModuleRegistration() || method.isPackageParamMethod(REGISTER_APP_LIFECYCLE_METHOD_NAME) ||
+                    method.isPackageParamMethod("onAppLifecycle")) return Execution.IMMEDIATE
+                if (method.isPackageDeclaration() && method.parameterList.parameters[index].type.containsPackageParam()) return Execution.PACKAGE
+            }
+            return if (source.analyzeOrNull { isInlineArgument(source) } == true) Execution.IMMEDIATE else Execution.UNKNOWN
         }
+
+        private fun PsiMethod.isDeferredEntryCallback(): Boolean {
+            val owner = containingClass?.qualifiedName
+            return owner == MODULE_LIFECYCLE_CLASS.removeSuffix("Kt") || owner == APP_LIFECYCLE_CLASS ||
+                owner in FRAMEWORK_CALLBACK_OWNERS || isPackageParamMethod(WITH_APPLICATION_READY_METHOD_NAME) ||
+                (name == "thread" && context.evaluator.getPackage(this)?.qualifiedName == "kotlin.concurrent")
+        }
+
+        private fun PsiMethod.isPackageDeclaration() = isEncase() ||
+            (containingClass?.qualifiedName == PACKAGE_PARAM_CLASS &&
+                name in setOf(LOAD_APP_METHOD_NAME, LOAD_SYSTEM_METHOD_NAME, LOAD_ZYGOTE_METHOD_NAME, WITH_PROCESS_METHOD_NAME))
 
         private fun PsiType.containsPackageParam(): Boolean = when (this) {
             is PsiArrayType -> componentType.containsPackageParam()
@@ -1271,7 +1334,7 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
             YUKIHOOK_CLASS, YUKIHOOKAPI_CLASS -> parameterList.parametersCount == 1 &&
                 parameterList.parameters[0].type.isHookLoadingArgument()
             YUKIHOOK_FACTORY_CLASS -> parameterList.parametersCount == 2 &&
-                parameterList.parameters[0].type.canonicalText == MODULE_ENTRY_CLASS &&
+                parameterList.parameters[0].type.canonicalText in setOf(MODULE_ENTRY_CLASS, LEGACY_MODULE_ENTRY_CLASS) &&
                 parameterList.parameters[1].type.isHookLoadingArgument()
             else -> false
         }

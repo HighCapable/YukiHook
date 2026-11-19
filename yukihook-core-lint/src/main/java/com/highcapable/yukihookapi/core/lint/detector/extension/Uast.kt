@@ -111,20 +111,21 @@ internal fun UCallExpression.enclosingFunction() =
         ?: generateSequence(uastParent) { it.uastParent }.filterIsInstance<UMethod>().firstOrNull()
             ?.let { it.sourcePsi ?: it.javaPsi.navigationElement }
 
-internal fun UCallExpression.functionTarget(context: JavaContext): PsiElement? {
+internal fun UCallExpression.functionTarget(): PsiElement? {
     // UAST may resolve a local Kotlin function to a synthetic method instead of its declaration.
     return (sourcePsi as? KtCallExpression)?.calleeExpression?.references
-        ?.firstNotNullOfOrNull { it.resolve().localFunction(context) }
-        ?: resolve()?.navigationElement.localFunction(context)
+        ?.firstNotNullOfOrNull { it.resolve().sourceFunction() }
+        ?: resolve()?.navigationElement.sourceFunction()
 }
 
-internal fun UCallableReferenceExpression.functionTarget(context: JavaContext) =
-    sourcePsi?.references?.firstNotNullOfOrNull { it.resolve().localFunction(context) }
-        ?: resolve()?.navigationElement.localFunction(context)
+internal fun UCallableReferenceExpression.functionTarget() =
+    sourcePsi?.references?.firstNotNullOfOrNull { it.resolve().sourceFunction() }
+        ?: resolve()?.navigationElement.sourceFunction()
 
-internal fun PsiElement?.localFunction(context: JavaContext): PsiElement? {
+private fun PsiElement?.sourceFunction(): PsiElement? {
     if (this !is KtNamedFunction && this !is PsiMethod) return null
-    return takeIf { it.containingFile?.virtualFile?.path == context.file.path }
+    val extension = containingFile?.virtualFile?.extension
+    return takeIf { extension == "kt" || extension == "java" }
 }
 
 internal fun JavaContext.toUFile(source: File): UFile? {

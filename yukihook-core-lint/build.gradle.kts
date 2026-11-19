@@ -16,4 +16,8 @@ dependencies {
     compileOnly(libs.kotlin.stdlib)
     compileOnly(libs.android.lint.api)
     compileOnly(libs.android.lint.checks)
+
+    testImplementation(libs.android.lint.api)
+    testImplementation(libs.android.lint.tests)
+    testImplementation(libs.junit)
 }
