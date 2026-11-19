@@ -61,6 +61,25 @@ class ModuleUsageDetectorTest : LintDetectorTest() {
             class HookChain : HookInvocation() {
                 val args: List<Any?> = emptyList()
                 fun arg(index: Int): Any? = null
+                @JvmName("argTyped") fun <T> arg(index: Int): T? = null
+                fun argOrNull(index: Int): Any? = null
+                @JvmName("argOrNullTyped") inline fun <reified T> argOrNull(index: Int): T? = null
+                fun firstArg(): Any? = null
+                @JvmName("firstArgTyped") fun <T> firstArg(): T? = null
+                fun lastArg(): Any? = null
+                @JvmName("lastArgTyped") fun <T> lastArg(): T? = null
+                fun firstArgOrNull(): Any? = null
+                @JvmName("firstArgOrNullTyped") inline fun <reified T> firstArgOrNull(): T? = null
+                fun lastArgOrNull(): Any? = null
+                @JvmName("lastArgOrNullTyped") inline fun <reified T> lastArgOrNull(): T? = null
+                fun proceed(): Any? = null
+                fun proceed(args: Array<out Any?>): Any? = null
+                @JvmName("proceedTyped") fun <T> proceed(): T? = null
+                @JvmName("proceedTyped") fun <T> proceed(args: Array<out Any?>): T? = null
+                fun proceedWith(instance: Any): Any? = null
+                fun proceedWith(instance: Any, args: Array<out Any?>): Any? = null
+                @JvmName("proceedWithTyped") fun <T> proceedWith(instance: Any): T? = null
+                @JvmName("proceedWithTyped") fun <T> proceedWith(instance: Any, args: Array<out Any?>): T? = null
             }
         """).indented()
 
@@ -334,9 +353,14 @@ class ModuleUsageDetectorTest : LintDetectorTest() {
                 val methodRef = method
                 arg(methodRef.parameterTypes.size - 1)
                 param.args[param.args.lastIndex] = null
+                arg(method.parameterCount - 1)
+                val lastFromCount = param.constructor.parameterCount - 1
+                param.arg(lastFromCount)
+                val count = methodRef.parameterCount
+                args[count - 1] = null
             }
         """).indented()).testModes(TestMode.DEFAULT).run()
-            .expectCount(6, Severity.INFORMATIONAL)
+            .expectCount(9, Severity.INFORMATIONAL)
             .expectFixDiffs("""
                 Fix for src/test/pkg/Positions.kt line 5: Replace with 'firstArg':
                 @@ -5 +5
@@ -362,10 +386,22 @@ class ModuleUsageDetectorTest : LintDetectorTest() {
                 @@ -13 +13
                 -     param.args[param.args.lastIndex] = null
                 +     param.lastArg().set(null)
+                Fix for src/test/pkg/Positions.kt line 14: Replace with 'lastArg':
+                @@ -14 +14
+                -     arg(method.parameterCount - 1)
+                +     lastArg()
+                Fix for src/test/pkg/Positions.kt line 16: Replace with 'lastArg':
+                @@ -16 +16
+                -     param.arg(lastFromCount)
+                +     param.lastArg()
+                Fix for src/test/pkg/Positions.kt line 18: Replace with 'lastArg().set':
+                @@ -18 +18
+                -     args[count - 1] = null
+                +     lastArg().set(null)
             """.trimIndent())
     }
 
-    fun testOtherArraysHookChainsAndUnknownArgumentPositionsAreIgnored() {
+    fun testUnrelatedAndUnsupportedArgumentReadsAreIgnored() {
         lint().files(hookParam, kotlin("""
             package test.pkg
             import com.highcapable.yukihookapi.hook.param.HookChain
@@ -380,20 +416,177 @@ class ModuleUsageDetectorTest : LintDetectorTest() {
                 arg(this.args.size - 2)
                 arg(other.method.parameterTypes.lastIndex)
                 arg(unrelated.parameterTypes.size - 1)
+                arg(method.parameterCount)
+                arg(method.parameterCount - 2)
+                arg(other.constructor.parameterCount - 1)
+                arg(unrelated.parameterCount - 1)
                 var last = method.parameterTypes.lastIndex
                 last--
                 arg(last)
             }
-            fun HookChain.read() {
+            fun HookChain.read(other: HookChain, otherArgs: List<Any?>) {
+                args[1]
                 args[0] as? String
-                arg(0)
-                arg(method.parameterTypes.lastIndex)
+                arg(1) as? String
+                argOrNull(1) as String?
+                arg(other.args.lastIndex)
+                argOrNull(other.constructor.parameterTypes.size - 1)
+                args.firstOrNull { it is String }
+                otherArgs.getOrNull(1)
+                otherArgs.lastOrNull() as? String
+                proceed() as? String
+                proceedWith("other") as? String
+                proceed<CharSequence>() as String?
+            }
+            fun HookChain.shadowedLookup() {
+                fun List<Any?>.getOrNull(index: Int) = first()
+                args.getOrNull(1)
             }
             fun HookParam.localArg() {
                 fun arg(i: Int) = i
                 arg(0)
             }
         """).indented()).testModes(TestMode.DEFAULT).run().expectClean()
+    }
+
+    fun testHookChainArgumentShortcutsKeepTypesAndBoundsBehavior() {
+        lint().files(hookParam, kotlin("src/test/pkg/ChainPositions.kt", """
+            package test.pkg
+            import com.highcapable.yukihookapi.hook.param.HookChain
+
+            fun HookChain.read(chain: HookChain, optional: HookChain?) {
+                optional?.arg(index = 0)
+                arg<String>(0)
+                arg(args.size - 1)
+                val last = chain.method.parameterTypes.lastIndex
+                chain.argOrNull<String>(last)
+                argOrNull(0)
+                chain.arg<Int>(chain.constructor.parameterTypes.size - 1)
+                argOrNull(method.parameterCount - 1)
+            }
+        """).indented()).testModes(TestMode.DEFAULT).run()
+            .expectCount(7, Severity.INFORMATIONAL)
+            .expectFixDiffs("""
+                Fix for src/test/pkg/ChainPositions.kt line 5: Replace with 'firstArg':
+                @@ -5 +5
+                -     optional?.arg(index = 0)
+                +     optional?.firstArg()
+                Fix for src/test/pkg/ChainPositions.kt line 6: Replace with 'firstArg':
+                @@ -6 +6
+                -     arg<String>(0)
+                +     firstArg<String>()
+                Fix for src/test/pkg/ChainPositions.kt line 7: Replace with 'lastArg':
+                @@ -7 +7
+                -     arg(args.size - 1)
+                +     lastArg()
+                Fix for src/test/pkg/ChainPositions.kt line 9: Replace with 'lastArgOrNull':
+                @@ -9 +9
+                -     chain.argOrNull<String>(last)
+                +     chain.lastArgOrNull<String>()
+                Fix for src/test/pkg/ChainPositions.kt line 10: Replace with 'firstArgOrNull':
+                @@ -10 +10
+                -     argOrNull(0)
+                +     firstArgOrNull()
+                Fix for src/test/pkg/ChainPositions.kt line 11: Replace with 'lastArg':
+                @@ -11 +11
+                -     chain.arg<Int>(chain.constructor.parameterTypes.size - 1)
+                +     chain.lastArg<Int>()
+                Fix for src/test/pkg/ChainPositions.kt line 12: Replace with 'lastArgOrNull':
+                @@ -12 +12
+                -     argOrNull(method.parameterCount - 1)
+                +     lastArgOrNull()
+            """.trimIndent())
+    }
+
+    fun testHookChainOptionalReadsFoldSafeCastsIntoOneFix() {
+        lint().files(hookParam, kotlin("src/test/pkg/ChainReads.kt", """
+            package test.pkg
+            import com.highcapable.yukihookapi.hook.param.HookChain
+
+            fun HookChain.read(chain: HookChain?, i: Int) {
+                args.getOrNull(index = i)
+                args.firstOrNull()
+                args.lastOrNull()
+                val first = (chain?.args?.getOrNull(0) as? String?)?.length
+                val indexed = argOrNull(i) as? String
+                val last = args.getOrNull(args.lastIndex) as? CharSequence
+                val explicitLast = lastArgOrNull() as? String
+            }
+        """).indented()).testModes(TestMode.DEFAULT).run()
+            .expectCount(7, Severity.INFORMATIONAL)
+            .expectFixDiffs("""
+                Fix for src/test/pkg/ChainReads.kt line 5: Replace with 'argOrNull':
+                @@ -5 +5
+                -     args.getOrNull(index = i)
+                +     argOrNull(index = i)
+                Fix for src/test/pkg/ChainReads.kt line 6: Replace with 'firstArgOrNull':
+                @@ -6 +6
+                -     args.firstOrNull()
+                +     firstArgOrNull()
+                Fix for src/test/pkg/ChainReads.kt line 7: Replace with 'lastArgOrNull':
+                @@ -7 +7
+                -     args.lastOrNull()
+                +     lastArgOrNull()
+                Fix for src/test/pkg/ChainReads.kt line 8: Replace with 'firstArgOrNull':
+                @@ -8 +8
+                -     val first = (chain?.args?.getOrNull(0) as? String?)?.length
+                +     val first = chain?.firstArgOrNull<String>()?.length
+                Fix for src/test/pkg/ChainReads.kt line 9: Replace with 'argOrNull':
+                @@ -9 +9
+                -     val indexed = argOrNull(i) as? String
+                +     val indexed = argOrNull<String>(i)
+                Fix for src/test/pkg/ChainReads.kt line 10: Replace with 'lastArgOrNull':
+                @@ -10 +10
+                -     val last = args.getOrNull(args.lastIndex) as? CharSequence
+                +     val last = lastArgOrNull<CharSequence>()
+                Fix for src/test/pkg/ChainReads.kt line 11: Replace with 'lastArgOrNull':
+                @@ -11 +11
+                -     val explicitLast = lastArgOrNull() as? String
+                +     val explicitLast = lastArgOrNull<String>()
+            """.trimIndent())
+    }
+
+    fun testHookChainHardCastsUseTypedReadsAndProceedCalls() {
+        lint().files(hookParam, kotlin("src/test/pkg/ChainCasts.kt", """
+            package test.pkg
+            import com.highcapable.yukihookapi.hook.param.HookChain
+
+            fun HookChain.read(chain: HookChain, receiver: Any, values: Array<Any?>, i: Int) {
+                val indexed = chain.args[i] as String?
+                val first = (arg(0) as String).length
+                val next = proceed() as String?
+                val modified = proceed(args = values) as String
+                val other = chain.proceedWith(receiver) as String?
+                val both = chain.proceedWith(instance = receiver, args = values) as List<String?>
+            }
+        """).indented()).testModes(TestMode.DEFAULT).run()
+            .expectCount(6, Severity.INFORMATIONAL)
+            .expectFixDiffs("""
+                Fix for src/test/pkg/ChainCasts.kt line 5: Replace with 'arg':
+                @@ -5 +5
+                -     val indexed = chain.args[i] as String?
+                +     val indexed = chain.arg<String>(i)
+                Fix for src/test/pkg/ChainCasts.kt line 6: Replace with 'firstArg':
+                @@ -6 +6
+                -     val first = (arg(0) as String).length
+                +     val first = firstArg<String>()!!.length
+                Fix for src/test/pkg/ChainCasts.kt line 7: Replace with 'proceed':
+                @@ -7 +7
+                -     val next = proceed() as String?
+                +     val next = proceed<String>()
+                Fix for src/test/pkg/ChainCasts.kt line 8: Replace with 'proceed':
+                @@ -8 +8
+                -     val modified = proceed(args = values) as String
+                +     val modified = proceed<String>(args = values)!!
+                Fix for src/test/pkg/ChainCasts.kt line 9: Replace with 'proceedWith':
+                @@ -9 +9
+                -     val other = chain.proceedWith(receiver) as String?
+                +     val other = chain.proceedWith<String>(receiver)
+                Fix for src/test/pkg/ChainCasts.kt line 10: Replace with 'proceedWith':
+                @@ -10 +10
+                -     val both = chain.proceedWith(instance = receiver, args = values) as List<String?>
+                +     val both = chain.proceedWith<List<String?>>(instance = receiver, args = values)!!
+            """.trimIndent())
     }
 
     fun testHookBlocksKeepPriorityAndSafeReceivers() {

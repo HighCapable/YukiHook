@@ -45,6 +45,7 @@ import org.jetbrains.kotlin.analysis.api.resolution.KaExplicitReceiverValue
 import org.jetbrains.kotlin.analysis.api.resolution.KaImplicitReceiverValue
 import org.jetbrains.kotlin.analysis.api.resolution.KaReceiverValue
 import org.jetbrains.kotlin.analysis.api.resolution.KaSmartCastedReceiverValue
+import org.jetbrains.kotlin.analysis.api.resolution.KaVariableAccessCall
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.singleVariableAccessCall
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
@@ -104,6 +105,7 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
         private const val MODULE_APPLICATION = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.xposed.application.ModuleApplication"
         private const val HOOK_INVOCATION = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.HookInvocation"
         private const val HOOK_PARAM = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.HookParam"
+        private const val HOOK_CHAIN = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.HookChain"
         private const val ARGUMENT_EDITOR = "$HOOK_PARAM.ArgumentEditor"
         private const val PACKAGE_PARAM = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.PackageParam"
         private const val KAVAREF_EXTENSION_PACKAGE = "${DeclaredSymbol.CORE_PACKAGE_NAME}.extension.kavaref"
@@ -120,13 +122,22 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
 
         private const val HOOK_PARAM_ARG = "$HOOK_PARAM.arg"
         private const val HOOK_PARAM_ARGS = "$HOOK_PARAM.args"
+        private const val HOOK_CHAIN_ARGS = "$HOOK_CHAIN.args"
         private const val HOOK_INVOCATION_METHOD = "$HOOK_INVOCATION.method"
         private const val HOOK_INVOCATION_CONSTRUCTOR = "$HOOK_INVOCATION.constructor"
         private const val METHOD_PARAMETER_TYPES_GETTER = "$METHOD_CLASS.getParameterTypes"
         private const val CONSTRUCTOR_PARAMETER_TYPES_GETTER = "$CONSTRUCTOR_CLASS.getParameterTypes"
         private const val EXECUTABLE_PARAMETER_TYPES_GETTER = "$EXECUTABLE_CLASS.getParameterTypes"
+        private const val METHOD_PARAMETER_COUNT_GETTER = "$METHOD_CLASS.getParameterCount"
+        private const val CONSTRUCTOR_PARAMETER_COUNT_GETTER = "$CONSTRUCTOR_CLASS.getParameterCount"
+        private const val EXECUTABLE_PARAMETER_COUNT_GETTER = "$EXECUTABLE_CLASS.getParameterCount"
         private const val KOTLIN_ARRAY_SIZE = "kotlin.Array.size"
-        private const val KOTLIN_LAST_INDEX = "kotlin.collections.lastIndex"
+        private const val KOTLIN_COLLECTIONS = "kotlin.collections"
+        private const val KOTLIN_LIST_SIZE = "$KOTLIN_COLLECTIONS.List.size"
+        private const val KOTLIN_LAST_INDEX = "$KOTLIN_COLLECTIONS.lastIndex"
+        private const val KOTLIN_GET_OR_NULL = "$KOTLIN_COLLECTIONS.getOrNull"
+        private const val KOTLIN_FIRST_OR_NULL = "$KOTLIN_COLLECTIONS.firstOrNull"
+        private const val KOTLIN_LAST_OR_NULL = "$KOTLIN_COLLECTIONS.lastOrNull"
         private const val KOTLIN_APPLY = "kotlin.apply"
 
         val USE_MODULE_APPLICATION_ISSUE = Issue.create(
@@ -166,8 +177,7 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             id = "UseHookInvocationApi",
             briefDescription = "Use hook invocation APIs for casts and argument access",
             explanation = """
-                Casting the instance, member, or result in a hook callback can be simplified by using the APIs \
-                provided by `HookInvocation` and `HookParam`.
+                Use the APIs provided by `HookInvocation`, `HookParam`, and `HookChain` to read arguments and cast invocation values.
 
                 See the documentation for more details:
                 - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core
@@ -185,6 +195,12 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 - `arg(index).getOrNull<T>()` to get an argument as `T`, also returning null when the argument has a different type
                 - `arg(index).set(value)` to set an argument
                 - `firstArg()` and `lastArg()` to get the editor for the first or last argument
+
+                The `HookChain` provides:
+                - `arg<T>(index)`, `firstArg<T>()`, and `lastArg<T>()` to read arguments as `T`
+                - `argOrNull<T>(index)`, `firstArgOrNull<T>()`, and `lastArgOrNull<T>()` to read arguments as `T`, \
+                or null when the argument is missing, null, or has a different type
+                - `proceed<T>()` and `proceedWith<T>(instance)` to continue the chain and read its result as `T`
 
                 A replacement for a cast to a non-null type uses `!!` when the replacement API returns a nullable value.
 
@@ -225,6 +241,21 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 firstArg().get<String>()
                 arg(1).getOrNull<String>()
                 lastArg().getOrNull<String>()
+                ```
+
+                In a chain interceptor:
+                ```kotlin
+                // Before
+                arg<String>(0)
+                args.getOrNull(0) as? String
+                proceed() as String?
+                proceedWith(instance) as String
+
+                // After
+                firstArg<String>()
+                firstArgOrNull<String>()
+                proceed<String>()
+                proceedWith<String>(instance)!!
                 ```
             """.trimIndent(),
             category = Category.PRODUCTIVITY,
@@ -268,6 +299,18 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
         )
     }
 
+    private class InvocationReplacement(
+        val name: String,
+        val text: String
+    )
+
+    private class ChainInvocationCall(
+        val name: String,
+        val prefix: String,
+        val arguments: String,
+        val keptExpressions: List<PsiElement>
+    )
+
     private class ArgumentEditorCall(
         val callPrefix: String,
         val labelPrefix: String,
@@ -303,7 +346,11 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             val call = node.sourcePsi as? KtCallExpression ?: return
             when (call.calleeExpression?.text) {
                 "apply" -> checkHookApply(node, call)
-                "arg" -> checkArgumentPosition(node, call)
+                "arg" -> {
+                    checkHookParamArgumentPosition(node, call)
+                    checkChainArgumentCall(node, call)
+                }
+                "argOrNull", "getOrNull", "firstOrNull", "lastOrNull" -> checkChainArgumentCall(node, call)
             }
         }
 
@@ -330,21 +377,27 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             )
         }
 
-        private fun checkArgumentPosition(node: UCallExpression, source: KtCallExpression) {
+        private fun checkHookParamArgumentPosition(node: UCallExpression, source: KtCallExpression) {
             val index = source.valueArguments.singleOrNull()?.getArgumentExpression() ?: return
             val replacementName = source.analyzeOrNull {
                 val call = source.resolveToCall()?.singleFunctionCallOrNull() ?: return@analyzeOrNull null
                 if (call.symbol.callableId?.asSingleFqName()?.asString() != HOOK_PARAM_ARG) return@analyzeOrNull null
-                when {
-                    index.evaluate()?.value == 0 -> "firstArg"
-                    isLastArgumentIndex(index, call.dispatchReceiver) -> "lastArg"
-                    else -> null
-                }
+                argumentShortcut(index, call.dispatchReceiver, HOOK_PARAM_ARGS)
             } ?: return
             val hasReceiver = (source.parent as? KtQualifiedExpression)?.selectorExpression == source
             if (!hasReceiver && source.hasLocalDeclaration(replacementName, includeFunctions = true)) return
             if (source.anyDescendantOfType<PsiComment>()) return
             reportInvocationUsage(node, source, source, replacementName, "$replacementName()")
+        }
+
+        private fun checkChainArgumentCall(node: UCallExpression, source: KtCallExpression) {
+            val qualified = (source.parent as? KtQualifiedExpression)?.takeIf { it.selectorExpression == source }
+            val expression = qualified ?: source
+            val replacement = expression.chainReplacement() ?: return
+            val cast = expression.outermostParenthesizedExpression().parent as? KtBinaryExpressionWithTypeRHS
+            // Let the cast fix replace both the read and the cast in one action.
+            if (cast != null && KtPsiUtil.safeDeparenthesize(cast.left) == expression && expression.chainReplacement(cast) != null) return
+            reportInvocationUsage(node, expression, expression, replacement.name, replacement.text)
         }
 
         override fun visitBinaryExpression(node: UBinaryExpression) {
@@ -373,6 +426,10 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 val replacement = if (isSafeCast) call else typeReference.preserveCastType(call)
                 if (editor.isShadowed || target.losesComments(editor.keptExpressions + type)) return
                 reportInvocationUsage(node, source, target, "${editor.labelPrefix}$name", replacement)
+                return
+            }
+            operand.chainReplacement(source)?.let {
+                reportInvocationUsage(node, source, source.outermostParenthesizedExpression(), it.name, it.text)
                 return
             }
             val getter = (node.operand.skipParenthesizedExprDown() as? UResolvable)?.resolve() as? PsiMethod ?: return
@@ -439,6 +496,103 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
         }
     })
 
+    private fun KtExpression.chainReplacement(cast: KtBinaryExpressionWithTypeRHS? = null): InvocationReplacement? {
+        val call = selector() as? KtCallExpression
+        if (call == null && this !is KtArrayAccessExpression) return null
+        val typeReference = cast?.right
+        if (cast != null && (typeReference == null || call?.typeArgumentList != null)) return null
+        val isSafeCast = cast?.operationReference?.getReferencedNameElementType() == KtTokens.AS_SAFE
+        val resolved = analyzeOrNull {
+            chainInvocationCall(this@chainReplacement, call, cast != null, isSafeCast)
+                ?.takeIf { !isSafeCast || (typeReference != null && canReify(typeReference.type)) }
+        } ?: return null
+
+        val source = cast ?: this
+        if (resolved.prefix.isEmpty() && source.hasLocalDeclaration(resolved.name, includeFunctions = true)) return null
+        val replacementType = (typeReference?.typeElement as? KtNullableType)?.innerType ?: typeReference
+        val typeArguments = if (replacementType != null) "<${replacementType.text}>" else call?.typeArgumentList?.text.orEmpty()
+        val kept = resolved.keptExpressions + listOfNotNull(replacementType ?: call?.typeArgumentList)
+        val target = cast?.outermostParenthesizedExpression() ?: this
+        if (target.losesComments(kept)) return null
+
+        val text = "${resolved.prefix}${resolved.name}$typeArguments${resolved.arguments}"
+        val replacement = if (typeReference != null && !isSafeCast) typeReference.preserveCastType(text) else text
+        return InvocationReplacement(resolved.name, replacement)
+    }
+
+    private fun KaSession.chainInvocationCall(
+        expression: KtExpression,
+        call: KtCallExpression?,
+        isCast: Boolean,
+        isSafeCast: Boolean
+    ): ChainInvocationCall? {
+        if (expression is KtArrayAccessExpression) {
+            if (!isCast || isSafeCast) return null
+            val array = expression.arrayExpression?.let(KtPsiUtil::safeDeparenthesize) ?: return null
+            val index = expression.indexExpressions.singleOrNull() ?: return null
+            val property = propertyAccess(array) ?: return null
+            if (property.symbol.callableId?.asSingleFqName()?.asString() != HOOK_CHAIN_ARGS) return null
+            val shortcut = chainArgumentShortcut(index, property.dispatchReceiver, usesOrNull = false)
+            return ChainInvocationCall(
+                shortcut ?: "arg", array.receiverPrefix(), if (shortcut == null) "(${index.text})" else "()",
+                listOfNotNull(array, index.takeIf { shortcut == null })
+            )
+        }
+
+        val resolved = call?.resolveToCall()?.singleFunctionCallOrNull() ?: return null
+        val id = resolved.symbol.callableId ?: return null
+        val name = id.callableName.asString()
+        val receiver = (expression as? KtQualifiedExpression)?.receiverExpression
+        val arguments = call.valueArgumentList ?: return null
+        if (id.classId?.asSingleFqName()?.asString() == HOOK_CHAIN) {
+            val usesOrNull = when (name) {
+                "arg", "firstArg", "lastArg", "proceed", "proceedWith" -> false
+                "argOrNull", "firstArgOrNull", "lastArgOrNull" -> true
+                else -> return null
+            }
+            if (isCast && isSafeCast != usesOrNull) return null
+            val shortcut = if (name == "arg" || name == "argOrNull") {
+                val index = call.valueArguments.singleOrNull()?.getArgumentExpression() ?: return null
+                chainArgumentShortcut(index, resolved.dispatchReceiver, usesOrNull)
+            } else null
+            if (!isCast && shortcut == null) return null
+            return ChainInvocationCall(
+                shortcut ?: name, expression.receiverPrefix(), if (shortcut == null) arguments.text else "()",
+                listOfNotNull(receiver, arguments.takeIf { shortcut == null })
+            )
+        }
+
+        if (isCast && !isSafeCast) return null
+        val list = receiver?.let(KtPsiUtil::safeDeparenthesize) ?: return null
+        val property = propertyAccess(list) ?: return null
+        if (property.symbol.callableId?.asSingleFqName()?.asString() != HOOK_CHAIN_ARGS) return null
+        val replacementName = when (id.asSingleFqName().asString()) {
+            KOTLIN_GET_OR_NULL -> {
+                val index = call.valueArguments.singleOrNull()?.getArgumentExpression() ?: return null
+                chainArgumentShortcut(index, property.dispatchReceiver, usesOrNull = true) ?: "argOrNull"
+            }
+            KOTLIN_FIRST_OR_NULL -> "firstArgOrNull".takeIf { call.valueArguments.isEmpty() } ?: return null
+            KOTLIN_LAST_OR_NULL -> "lastArgOrNull".takeIf { call.valueArguments.isEmpty() } ?: return null
+            else -> return null
+        }
+        val keptArguments = arguments.takeIf { replacementName == "argOrNull" }
+        return ChainInvocationCall(
+            replacementName, list.receiverPrefix(), keptArguments?.text ?: "()",
+            listOfNotNull(list, keptArguments)
+        )
+    }
+
+    private fun KaSession.chainArgumentShortcut(index: KtExpression, receiver: KaReceiverValue?, usesOrNull: Boolean): String? {
+        val name = argumentShortcut(index, receiver, HOOK_CHAIN_ARGS) ?: return null
+        return if (usesOrNull) "${name}OrNull" else name
+    }
+
+    private fun KaSession.argumentShortcut(index: KtExpression, receiver: KaReceiverValue?, argsProperty: String) = when {
+        index.evaluate()?.value == 0 -> "firstArg"
+        isLastArgumentIndex(index, receiver, argsProperty) -> "lastArg"
+        else -> null
+    }
+
     private fun KtArrayAccessExpression.argumentEditor(): ArgumentEditorCall? {
         val array = arrayExpression?.let(KtPsiUtil::safeDeparenthesize) ?: return null
         if ((array.selector() as? KtNameReferenceExpression)?.getReferencedName() != "args") return null
@@ -446,11 +600,7 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
         val name = array.analyzeOrNull {
             val property = propertyAccess(array) ?: return@analyzeOrNull null
             if (property.symbol.callableId?.asSingleFqName()?.asString() != HOOK_PARAM_ARGS) return@analyzeOrNull null
-            when {
-                index.evaluate()?.value == 0 -> "firstArg"
-                isLastArgumentIndex(index, property.dispatchReceiver) -> "lastArg"
-                else -> "arg"
-            }
+            argumentShortcut(index, property.dispatchReceiver, HOOK_PARAM_ARGS) ?: "arg"
         } ?: return null
         val prefix = array.receiverPrefix()
         val argument = index.takeIf { name == "arg" }
@@ -476,7 +626,8 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             when {
                 originalType == null -> name == "get" && reader.typeArguments.isEmpty()
                 originalType.isAnyType -> true
-                name == "getOrNull" && isSafeCast -> typeReference.type.withNullability(true).isSubtypeOf(originalType.withNullability(true))
+                name == "getOrNull" && isSafeCast -> typeReference.type.withNullability(true)
+                    .isSubtypeOf(originalType.withNullability(true))
                 else -> false
             }
         }
@@ -524,33 +675,50 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
 
     private fun KaSession.propertyAccess(expression: KtExpression) = expression.selector()?.resolveToCall()?.singleVariableAccessCall()
 
-    private fun KaSession.isLastArgumentIndex(index: KtExpression, receiver: KaReceiverValue?): Boolean {
+    private fun KaSession.isLastArgumentIndex(index: KtExpression, receiver: KaReceiverValue?, argsProperty: String): Boolean {
         val expression = KtPsiUtil.safeDeparenthesize(localInitializer(KtPsiUtil.safeDeparenthesize(index)) ?: index)
-        val isSizeMinusOne = expression is KtBinaryExpression && expression.operationToken == KtTokens.MINUS
-        val bound = if (isSizeMinusOne) {
+        val isMinusOne = expression is KtBinaryExpression && expression.operationToken == KtTokens.MINUS
+        val bound = if (isMinusOne) {
             if (expression.right?.evaluate()?.value != 1) return false
-            expression.left?.let(KtPsiUtil::safeDeparenthesize)
+            val left = expression.left?.let(KtPsiUtil::safeDeparenthesize) ?: return false
+            KtPsiUtil.safeDeparenthesize(localInitializer(left) ?: left)
         } else expression
         val access = bound as? KtQualifiedExpression ?: return false
         val extent = propertyAccess(access) ?: return false
-        val expected = if (isSizeMinusOne) KOTLIN_ARRAY_SIZE else KOTLIN_LAST_INDEX
-        if (extent.symbol.callableId?.asSingleFqName()?.asString() != expected) return false
+        val invocationAccess = when (extent.javaGetterId()) {
+            METHOD_PARAMETER_COUNT_GETTER, CONSTRUCTOR_PARAMETER_COUNT_GETTER, EXECUTABLE_PARAMETER_COUNT_GETTER -> {
+                if (!isMinusOne) return false
+                invocationExecutable(extent)
+            }
+            else -> {
+                val extentId = extent.symbol.callableId?.asSingleFqName()?.asString()
+                val isArgumentExtent = if (isMinusOne) {
+                    extentId == KOTLIN_ARRAY_SIZE || (argsProperty == HOOK_CHAIN_ARGS && extentId == KOTLIN_LIST_SIZE)
+                } else extentId == KOTLIN_LAST_INDEX
+                if (!isArgumentExtent) return false
 
-        val array = KtPsiUtil.safeDeparenthesize(access.receiverExpression)
-        val origin = propertyAccess(localInitializer(array) ?: array) ?: return false
-        val invocationAccess = if (origin.symbol.callableId?.asSingleFqName()?.asString() == HOOK_PARAM_ARGS) origin
-        else {
-            val getter = (origin.symbol as? KaSyntheticJavaPropertySymbol)?.javaGetterSymbol?.callableId?.asSingleFqName()?.asString()
-            if (getter != METHOD_PARAMETER_TYPES_GETTER && getter != CONSTRUCTOR_PARAMETER_TYPES_GETTER &&
-                getter != EXECUTABLE_PARAMETER_TYPES_GETTER) return false
-            val executable = (origin.dispatchReceiver as? KaExplicitReceiverValue)?.expression ?: return false
-            val member = propertyAccess(localInitializer(executable) ?: executable) ?: return false
-            val id = member.symbol.callableId?.asSingleFqName()?.asString()
-            if (id != HOOK_INVOCATION_METHOD && id != HOOK_INVOCATION_CONSTRUCTOR) return false
-            member
-        }
+                val array = KtPsiUtil.safeDeparenthesize(access.receiverExpression)
+                val origin = propertyAccess(localInitializer(array) ?: array) ?: return false
+                if (origin.symbol.callableId?.asSingleFqName()?.asString() == argsProperty) origin
+                else when (origin.javaGetterId()) {
+                    METHOD_PARAMETER_TYPES_GETTER, CONSTRUCTOR_PARAMETER_TYPES_GETTER, EXECUTABLE_PARAMETER_TYPES_GETTER ->
+                        invocationExecutable(origin)
+                    else -> null
+                }
+            }
+        } ?: return false
         val invocation = receiver?.let { stableSymbol(it) } ?: return false
         return invocationAccess.dispatchReceiver?.let { stableSymbol(it) } == invocation
+    }
+
+    private fun KaVariableAccessCall.javaGetterId() =
+        (symbol as? KaSyntheticJavaPropertySymbol)?.javaGetterSymbol?.callableId?.asSingleFqName()?.asString()
+
+    private fun KaSession.invocationExecutable(access: KaVariableAccessCall): KaVariableAccessCall? {
+        val executable = (access.dispatchReceiver as? KaExplicitReceiverValue)?.expression ?: return null
+        val member = propertyAccess(localInitializer(executable) ?: executable) ?: return null
+        val id = member.symbol.callableId?.asSingleFqName()?.asString()
+        return member.takeIf { id == HOOK_INVOCATION_METHOD || id == HOOK_INVOCATION_CONSTRUCTOR }
     }
 
     private fun KaSession.localInitializer(expression: KtExpression): KtExpression? {
