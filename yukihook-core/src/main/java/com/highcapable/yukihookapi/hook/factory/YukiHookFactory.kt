@@ -34,6 +34,7 @@ import android.widget.ImageView
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.annotation.StyleRes
+import androidx.fragment.app.Fragment
 import com.highcapable.betterandroid.system.extension.utils.AndroidVersion
 import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.YukiHookAPI
@@ -99,6 +100,19 @@ fun Context.preferences(name: String = "") = YukiHookPreferences.from(this).let 
 fun Context.dataChannel(packageName: String) = YukiHookDataChannel.get().namespace(this, packageName)
 
 /**
+ * Gets a [YukiHookDataChannel] object for the fragment's view lifecycle.
+ *
+ * In a host environment, [packageName] must be the current host package name to receive data from the module.
+ * @see systemDataChannel
+ * @receiver the current fragment.
+ * @param packageName the target host package name. "android" or "system" refers to the system framework and works as [systemDataChannel].
+ * @return [YukiHookDataChannel.Namespace]
+ * @throws IllegalStateException if the fragment has no view.
+ */
+@MainThread
+fun Fragment.dataChannel(packageName: String) = YukiHookDataChannel.get().namespace(requireActivity(), packageName, viewLifecycleOwner)
+
+/**
  * Gets a [YukiHookDataChannel] object connected to the system server.
  *
  * In a host environment, data from the module is received only in the system server.
@@ -107,6 +121,18 @@ fun Context.dataChannel(packageName: String) = YukiHookDataChannel.get().namespa
  * @return [YukiHookDataChannel.Namespace]
  */
 fun Context.systemDataChannel() = dataChannel(AppParasitism.FRAMEWORK_PACKAGE_NAME)
+
+/**
+ * Gets a [YukiHookDataChannel] object connected to the system server for the fragment's view lifecycle.
+ *
+ * In a host environment, data from the module is received only in the system server.
+ * @see dataChannel
+ * @receiver the current fragment.
+ * @return [YukiHookDataChannel.Namespace]
+ * @throws IllegalStateException if the fragment has no view.
+ */
+@MainThread
+fun Fragment.systemDataChannel() = dataChannel(AppParasitism.FRAMEWORK_PACKAGE_NAME)
 
 /**
  * Gets the current process name.

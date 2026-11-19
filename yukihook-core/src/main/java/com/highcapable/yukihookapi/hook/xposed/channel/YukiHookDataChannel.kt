@@ -23,7 +23,6 @@
 
 package com.highcapable.yukihookapi.hook.xposed.channel
 
-import android.app.ActivityManager
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -34,13 +33,13 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.os.SystemClock
 import android.os.TransactionTooLargeException
-import androidx.core.content.getSystemService
 import androidx.core.os.use
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import com.highcapable.betterandroid.system.extension.component.BroadcastReceiver
 import com.highcapable.betterandroid.system.extension.component.getParcelableCompat
 import com.highcapable.betterandroid.system.extension.component.registerReceiver
 import com.highcapable.betterandroid.system.extension.component.sendBroadcast
-import com.highcapable.betterandroid.ui.extension.component.hostActivity
 import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.hook.core.internal.utils.RandomString
 import com.highcapable.yukihookapi.hook.log.YLog
@@ -52,6 +51,7 @@ import com.highcapable.yukihookapi.hook.xposed.bridge.session.ModuleReloadable
 import com.highcapable.yukihookapi.hook.xposed.channel.annotation.SendTooLargeChannelData
 import com.highcapable.yukihookapi.hook.xposed.channel.data.ChannelData
 import com.highcapable.yukihookapi.hook.xposed.channel.data.wrapper.ChannelDataWrapper
+import com.highcapable.yukihookapi.hook.xposed.channel.lifecycle.ChannelLifecycle
 import com.highcapable.yukihookapi.hook.xposed.channel.priority.ChannelPriority
 import com.highcapable.yukihookapi.hook.xposed.parasitic.AppParasitism
 import com.highcapable.yukihookapi.hook.xposed.parasitic.reference.ModuleClassLoader
@@ -132,45 +132,18 @@ class YukiHookDataChannel private constructor() {
 
         override fun onDispose() = instance.unregister()
 
-        override fun onRestoreState(appInfo: ApplicationInfo, state: Any?) = AppParasitism.withHostApplication(instance::registerToHost)
+        override fun onRestoreState(appInfo: ApplicationInfo, state: Any?) = AppParasitism.withHostApplication {
+            instance.register(it, isHost = true)
+        }
     }
 
-    /**
-     * Listener type for key-value callbacks.
-     */
-    private enum class CallbackKeyType {
-        SINGLE,
-        CDATA,
-        WAIT_FOR_LISTENER
-    }
-
-    private val receiverCallbacks = ConcurrentHashMap<String, Pair<Context?, (String, Intent) -> Unit>>()
-    private var receiverContext: Context? = null
+    private val channelLifecycle = ChannelLifecycle(isHostEnvironment)
+    private var receiverContext: Application? = null
     private var handlerReceiver: BroadcastReceiver? = null
 
     /** The broadcast receiver callback. */
     private val handlerReceiverCallback = BroadcastReceiver { _, intent ->
-        events.dispatch {
-            intent.action?.also { action ->
-                // One failing listener must not stop the others from receiving this action.
-                var failure: Throwable? = null
-                receiverCallbacks.forEach { (key, param) ->
-                    runCatching {
-                        when {
-                            param.first?.hostActivity?.isDestroyed == true -> receiverCallbacks.remove(key, param)
-                            isCurrentBroadcast(param.first) -> param.second(action, intent)
-                        }
-                    }.onFailure {
-                        // A module bug must not crash the host, the module process throws it to the caller.
-                        if (isHostEnvironment)
-                            YLog.innerE("The module's data channel listener \"$key\" failed to handle received action \"$action\"", it)
-                        else if (failure == null) failure = it
-                        else failure.addSuppressed(it)
-                    }
-                }
-                failure?.let { throw it }
-            }
-        }
+        events.dispatch { intent.action?.let { channelLifecycle.dispatch(it, intent) } }
     }
 
     /** Checks the API loading state. */
@@ -181,21 +154,6 @@ class YukiHookDataChannel private constructor() {
         if (isHostEnvironment) require(XposedModuleRuntime.modulePackageName.isNotBlank()) {
             "Failed to load the Xposed modulePackageName, check its configuration and rebuild the project."
         }
-    }
-
-    /**
-     * Checks whether this broadcast callback event is currently active.
-     * @param context the current instance.
-     * @return [Boolean]
-     */
-    private fun isCurrentBroadcast(context: Context?) = runCatching {
-        @Suppress("DEPRECATION")
-        context is Application || isHostEnvironment || ((context ?: receiverContext)
-            ?.getSystemService<ActivityManager>()
-            ?.getRunningTasks(9999)?.any { context?.javaClass?.name == it?.topActivity?.className } == true)
-    }.getOrElse {
-        YLog.innerW("Failed to get the current Activity status", it)
-        false
     }
 
     /**
@@ -215,52 +173,49 @@ class YukiHookDataChannel private constructor() {
     }.trim().hashCode()}"
 
     /**
-     * Registers broadcasts.
-     * @param context the global context of the target host or module. Registration stops when null.
-     * @param packageName the package name. When empty, it is obtained from [Context.getPackageName] on [context].
+     * Registers broadcasts after the target [Application] is ready.
+     * @param application the target host or module application.
+     * @param isHost whether to register the host side of the channel.
      */
-    internal fun register(context: Context?, packageName: String = context?.packageName ?: "") {
-        if (!YukiHook.Config.dataChannel || context == null) return
+    internal fun register(application: Application, isHost: Boolean) {
+        if (!YukiHook.Config.dataChannel || (isHost && handlerReceiver != null)) return
 
-        receiverContext = context
-        val filter = IntentFilter().apply {
-            addAction(if (isHostEnvironment) hostActionName(packageName) else moduleActionName(context))
-        }
-        handlerReceiver = context.registerReceiver(filter, exported = true, body = handlerReceiverCallback)
-
-        // Prevents the module from registering its own broadcast in the module environment.
-        if (!isHostEnvironment) return
-
-        namespace(context, packageName).with {
-            // Registers a listener that checks whether module and host versions match.
-            wait<String>(GET_MODULE_GENERATED_VERSION) { fromPackageName ->
-                namespace(context, fromPackageName).put(RESULT_MODULE_GENERATED_VERSION, moduleGeneratedVersion)
+        runCatching {
+            val packageName = application.packageName
+            val filter = IntentFilter().apply {
+                addAction(if (isHost) hostActionName(packageName) else moduleActionName(application))
             }
-            // Registers a listener for debug log data exchanged between the module and host.
-            wait<String>(GET_YUKI_LOGGER_IN_MEMORY_DATA) { fromPackageName ->
-                namespace(context, fromPackageName).put(loggerInMemoryDataResult, YLog.createSnapshot())
+            handlerReceiver = application.registerReceiver(filter, exported = true, body = handlerReceiverCallback)
+            receiverContext = application
+
+            if (!isHost) {
+                application.registerActivityLifecycleCallbacks(channelLifecycle)
+                return
             }
-        }
-    }
 
-    /**
-     * Registers broadcasts to the host once after its [Application] is ready.
-     * @param application the host [Application] instance.
-     */
-    internal fun registerToHost(application: Application) {
-        if (!YukiHook.Config.dataChannel || handlerReceiver != null) return
-
-        runCatching { register(application) }.onFailure {
-            events.reportFailure(it)
-            YLog.innerE("Data channel initialization failed", it)
+            namespace(application, packageName).with {
+                // Registers a listener that checks whether module and host versions match.
+                wait<String>(GET_MODULE_GENERATED_VERSION) { fromPackageName ->
+                    namespace(application, fromPackageName).put(RESULT_MODULE_GENERATED_VERSION, moduleGeneratedVersion)
+                }
+                // Registers a listener for debug log data exchanged between the module and host.
+                wait<String>(GET_YUKI_LOGGER_IN_MEMORY_DATA) { fromPackageName ->
+                    namespace(application, fromPackageName).put(loggerInMemoryDataResult, YLog.createSnapshot())
+                }
+            }
+        }.onFailure { failure ->
+            if (!isHost) throw failure
+            events.reportFailure(failure)
+            YLog.innerE("Data channel initialization failed", failure)
         }
     }
 
     /** Unregisters broadcasts. */
     internal fun unregister() {
         handlerReceiver?.let { receiverContext?.unregisterReceiver(it) }
+        if (!isHostEnvironment) receiverContext?.unregisterActivityLifecycleCallbacks(channelLifecycle)
         handlerReceiver = null
-        receiverCallbacks.clear()
+        channelLifecycle.clear()
         receiverContext = null
     }
 
@@ -268,15 +223,16 @@ class YukiHookDataChannel private constructor() {
      * Gets a namespace.
      * @param context the context instance.
      * @param packageName the target host package name.
+     * @param lcOwner the optional owner of the registered listeners.
      * @return [Namespace]
      */
-    internal fun namespace(context: Context? = null, packageName: String): Namespace {
+    internal fun namespace(context: Context? = null, packageName: String, lcOwner: LifecycleOwner? = null): Namespace {
         checkApi()
 
         val packageName = if (AppParasitism.isSystemFramework(packageName))
             AppParasitism.FRAMEWORK_PACKAGE_NAME
         else packageName
-        return Namespace(context = context ?: receiverContext, packageName)
+        return Namespace(context = context ?: receiverContext, packageName, lcOwner?.lifecycle)
     }
 
     /**
@@ -321,23 +277,19 @@ class YukiHookDataChannel private constructor() {
      * Use [namespace] to obtain [Namespace].
      * @param context the context instance.
      * @param packageName the target host package name.
+     * @param lifecycle the optional lifetime of listeners registered through this namespace.
      */
-    inner class Namespace internal constructor(private val context: Context?, private val packageName: String) {
+    inner class Namespace internal constructor(
+        private val context: Context?,
+        private val packageName: String,
+        private val lifecycle: Lifecycle?
+    ) {
 
         /** The current temporary segmented data. */
         private val segmentsTempData = ConcurrentHashMap<String, SegmentsTempData>()
 
         /** Whether sending from this namespace may bypass the data-size limit. */
         private var allowSendTooLargeData = false
-
-        /**
-         * Gets the key-value suffix.
-         * @param type the callback type.
-         * @return [String]
-         */
-        private fun keyShortName(type: CallbackKeyType) = "${keyNonRepeatName}_${
-            if (isHostEnvironment) "X" else context?.javaClass?.name ?: "M"
-        }_${type.ordinal}"
 
         /**
          * Unique key-value name that prevents names used by different hosts from interfering with one another.
@@ -445,10 +397,8 @@ class YukiHookDataChannel private constructor() {
          * @param result the result-data callback.
          */
         fun <T> wait(key: String, priority: ChannelPriority? = null, result: (value: T) -> Unit) {
-            receiverCallbacks[key + keyShortName(CallbackKeyType.SINGLE)] = Pair(context) { action, intent ->
-                if (priority == null || priority.result)
-                    if (action == if (isHostEnvironment) hostActionName(packageName) else moduleActionName(context))
-                        parseReceivedData(intent.getDataWrapper(key), result)
+            register(key, ChannelLifecycle.Kind.VALUE, priority) { intent ->
+                parseReceivedData(intent.getDataWrapper(key), result)
             }
         }
 
@@ -459,10 +409,8 @@ class YukiHookDataChannel private constructor() {
          * @param result the result-data callback.
          */
         fun <T> wait(data: ChannelData<T>, priority: ChannelPriority? = null, result: (value: T) -> Unit) {
-            receiverCallbacks[data.key + keyShortName(CallbackKeyType.CDATA)] = Pair(context) { action, intent ->
-                if (priority == null || priority.result)
-                    if (action == if (isHostEnvironment) hostActionName(packageName) else moduleActionName(context))
-                        parseReceivedData(intent.getDataWrapper(data.key), result)
+            register(data.key, ChannelLifecycle.Kind.TYPED_VALUE, priority) { intent ->
+                parseReceivedData(intent.getDataWrapper(data.key), result)
             }
         }
 
@@ -475,10 +423,8 @@ class YukiHookDataChannel private constructor() {
          * @param callback the result callback.
          */
         fun wait(key: String, priority: ChannelPriority? = null, callback: () -> Unit) {
-            receiverCallbacks[key + keyShortName(CallbackKeyType.WAIT_FOR_LISTENER)] = Pair(context) { action, intent ->
-                if (priority == null || priority.result)
-                    if (action == if (isHostEnvironment) hostActionName(packageName) else moduleActionName(context))
-                        intent.getDataWrapper<String>(key)?.let { if (it.instance.value == VALUE_WAIT_FOR_LISTENER) callback() }
+            register(key, ChannelLifecycle.Kind.NOTIFICATION, priority) { intent ->
+                if (intent.getDataWrapper<String>(key)?.instance?.value == VALUE_WAIT_FOR_LISTENER) callback()
             }
         }
 
@@ -539,13 +485,28 @@ class YukiHookDataChannel private constructor() {
         // endregion
 
         /**
+         * Registers a listener for a key-value pair.
+         * @param key the key name.
+         * @param kind the kind of listener.
+         * @param priority the response priority, unset by default.
+         * @param receive the result-data callback.
+         */
+        private fun register(key: String, kind: ChannelLifecycle.Kind, priority: ChannelPriority?, receive: (Intent) -> Unit) {
+            channelLifecycle.register(context, packageName, lifecycle, key, kind) { action, intent ->
+                if (priority?.result == false) return@register
+
+                val expectedAction = if (isHostEnvironment) hostActionName(packageName) else moduleActionName(context)
+                if (action == expectedAction) receive(intent)
+            }
+        }
+
+        /**
          * Converts arbitrary received data from an [Intent] into a [ChannelDataWrapper]<[T]> instance.
          * @param key the key name.
          * @return [ChannelDataWrapper]<[T]> or null.
          */
         private fun <T> Intent.getDataWrapper(key: String) = runCatching {
-            extras?.apply { classLoader = ModuleClassLoader.get() }
-                ?.getParcelableCompat<ChannelDataWrapper<*>>(key + keyNonRepeatName) as? ChannelDataWrapper<T>
+            extras?.apply { classLoader = ModuleClassLoader.get() }?.getParcelableCompat<ChannelDataWrapper<T>>(key + keyNonRepeatName)
         }.getOrNull()
 
         /**

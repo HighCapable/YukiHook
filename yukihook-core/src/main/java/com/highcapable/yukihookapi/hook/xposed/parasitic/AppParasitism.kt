@@ -483,7 +483,7 @@ internal object AppParasitism : ModuleReloadable {
      * @param application the host [Application].
      */
     private fun initializeHostApplication(application: Application) = bindHostApplication(application, dispatchCreate = true).also {
-        YukiHookDataChannel.get().registerToHost(application)
+        YukiHookDataChannel.get().register(application, isHost = true)
     }
 
     /**

@@ -15,6 +15,7 @@ android {
 
     defaultConfig {
         minSdk = gropify.project.android.minSdk
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
     buildTypes {
@@ -54,4 +55,7 @@ dependencies {
     implementation(libs.androidx.preference.ktx)
 
     testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(projects.yukihookRuntimeXposed82)
 }

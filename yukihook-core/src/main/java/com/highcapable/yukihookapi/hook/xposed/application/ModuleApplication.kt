@@ -79,7 +79,7 @@ open class ModuleApplication : Application() {
         } catch (e: NoClassDefFoundError) {
             YLog.innerE("Failed to initialize the hook entry in the module process, the generated class maybe missing", e)
         }
-        YukiHookDataChannel.get().register(this)
+        YukiHookDataChannel.get().register(this, isHost = false)
     }
 
     @CallSuper
