@@ -37,9 +37,14 @@ import com.highcapable.yukihookapi.core.lint.detector.extension.analyzeOrNull
 import com.highcapable.yukihookapi.core.lint.detector.extension.buildReplaceFix
 import com.highcapable.yukihookapi.core.lint.detector.extension.createExternalOnlyUastHandler
 import com.intellij.psi.CommonClassNames
+import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
+import org.jetbrains.kotlin.analysis.api.resolution.symbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaNamedFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaDefinitelyNotNullType
 import org.jetbrains.kotlin.analysis.api.types.KaErrorType
@@ -49,9 +54,14 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.StandardClassIds
 import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
 import org.jetbrains.kotlin.psi.KtBlockExpression
+import org.jetbrains.kotlin.psi.KtBreakExpression
+import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtCatchClause
+import org.jetbrains.kotlin.psi.KtContinueExpression
 import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
 import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtExpressionWithLabel
 import org.jetbrains.kotlin.psi.KtForExpression
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
@@ -61,7 +71,11 @@ import org.jetbrains.kotlin.psi.KtParenthesizedExpression
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPsiUtil
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
+import org.jetbrains.kotlin.psi.KtReturnExpression
+import org.jetbrains.kotlin.psi.KtSafeQualifiedExpression
+import org.jetbrains.kotlin.psi.psiUtil.anyDescendantOfType
 import org.jetbrains.uast.UBinaryExpressionWithType
+import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UResolvable
@@ -75,6 +89,8 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
         private const val MODULE_APPLICATION = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.xposed.application.ModuleApplication"
         private const val HOOK_INVOCATION = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.HookInvocation"
         private const val HOOK_PARAM = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.HookParam"
+        private const val PACKAGE_PARAM = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.PackageParam"
+        private const val KAVAREF_EXTENSION_PACKAGE = "${DeclaredSymbol.CORE_PACKAGE_NAME}.extension.kavaref"
 
         private const val INSTANCE_GETTER = "getInstance"
         private const val INSTANCE_OR_NULL_GETTER = "getInstanceOrNull"
@@ -168,9 +184,40 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 Scope.JAVA_FILE_SCOPE
             )
         )
+
+        val USE_HOOK_BLOCK_ISSUE = Issue.create(
+            id = "UseHookBlock",
+            briefDescription = "Use a hook configuration block instead of apply",
+            explanation = """
+                Use `hook { ... }` or `hookAll { ... }` to configure callbacks before registering the hook.
+                The overload with a configuration block returns a handle, while `apply` returns the hooker.
+
+                See the documentation for more details:
+                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core
+                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-core
+
+                Examples:
+                ```kotlin
+                // Before
+                member.hook().apply { before { /* ... */ } }
+                members.hookAll().apply { after { /* ... */ } }
+
+                // After
+                member.hook { before { /* ... */ } }
+                members.hookAll { after { /* ... */ } }
+                ```
+            """.trimIndent(),
+            category = Category.PRODUCTIVITY,
+            priority = 5,
+            severity = Severity.INFORMATIONAL,
+            implementation = Implementation(
+                ModuleUsageDetector::class.java,
+                Scope.JAVA_FILE_SCOPE
+            )
+        )
     }
 
-    override fun getApplicableUastTypes() = listOf(UClass::class.java, UBinaryExpressionWithType::class.java)
+    override fun getApplicableUastTypes() = listOf(UClass::class.java, UBinaryExpressionWithType::class.java, UCallExpression::class.java)
 
     override fun createUastHandler(context: JavaContext) = context.createExternalOnlyUastHandler(object : UElementHandler() {
 
@@ -186,6 +233,31 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 scope = node as UElement,
                 location = context.getNameLocation(node),
                 message = "`${node.name}` should inherit `ModuleApplication` to enable full YukiHook functionality"
+            )
+        }
+
+        override fun visitCallExpression(node: UCallExpression) {
+            val applyCall = node.sourcePsi as? KtCallExpression ?: return
+            if (applyCall.calleeExpression?.text != "apply") return
+            val expression = applyCall.parent as? KtQualifiedExpression ?: return
+            if (expression.selectorExpression != applyCall) return
+            val receiver = KtPsiUtil.safeDeparenthesize(expression.receiverExpression)
+            val hookCall = (if (receiver is KtQualifiedExpression) receiver.selectorExpression else receiver) as? KtCallExpression ?: return
+            val hookName = applyCall.analyzeOrNull {
+                if (applyCall.resolveToCall()?.singleFunctionCallOrNull()?.symbol?.callableId?.asSingleFqName()?.asString() != "kotlin.apply")
+                    return@analyzeOrNull null
+                hookCall.resolveToCall()?.singleFunctionCallOrNull()?.symbol?.hookBlockName()
+            } ?: return
+
+            val location = context.getLocation(expression)
+            context.report(
+                issue = USE_HOOK_BLOCK_ISSUE,
+                scope = node as UElement,
+                location = context.getNameLocation(applyCall),
+                message = "Use `$hookName { ... }` to configure callbacks before registering the hook",
+                quickfixData = expression.hookBlockReplacement(applyCall, hookCall, receiver)?.let {
+                    buildReplaceFix(name = "Use '$hookName' block", replacement = it, range = location, reformat = false)
+                }
             )
         }
 
@@ -251,6 +323,55 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             )
         }
     })
+
+    private fun KaFunctionSymbol.hookBlockName(): String? {
+        val id = callableId ?: return null
+        val name = id.callableName.asString()
+        if (name != "hook" && name != "hookAll") return null
+        if (id.classId?.asSingleFqName()?.asString() != PACKAGE_PARAM &&
+            !(id.classId == null && id.packageName.asString() == KAVAREF_EXTENSION_PACKAGE)) return null
+
+        return name.takeIf { valueParameters.size == 1 }
+    }
+
+    private fun KtQualifiedExpression.hookBlockReplacement(
+        applyCall: KtCallExpression,
+        hookCall: KtCallExpression,
+        receiver: KtExpression
+    ): String? {
+        val lambda = applyCall.lambdaArguments.singleOrNull() ?: return null
+        val arguments = hookCall.valueArgumentList ?: return null
+        if (applyCall.typeArgumentList != null || applyCall.valueArguments.size != 1) return null
+        val canReplace = analyzeOrNull {
+            // The block overload returns a handle. Dot apply can also run on a null receiver.
+            !isUsedAsExpression && (this@hookBlockReplacement is KtSafeQualifiedExpression ||
+                receiver.expressionType?.fullyExpandedType?.isMarkedNullable == false)
+        }
+        if (canReplace != true) return null
+
+        val hookLabel = hookCall.calleeExpression?.text
+        // Kotlin's inline apply supports control flow and suspend calls that the hook block cannot carry.
+        if (lambda.anyDescendantOfType<KtExpressionWithLabel> {
+                val label = it.getLabelName()
+                label == "apply" || (label != null && label == hookLabel) || it is KtBreakExpression || it is KtContinueExpression
+            }) return null
+        if (lambda.analyzeOrNull {
+                lambda.anyDescendantOfType<KtReturnExpression> {
+                    val target = it.getTargetLabel()?.references?.firstNotNullOfOrNull { reference -> reference.resolve() }
+                    target == null || !lambda.textRange.contains(target.textRange)
+                } || lambda.anyDescendantOfType<KtCallExpression> {
+                    val function = it.resolveToCall()?.singleFunctionCallOrNull()?.symbol as? KaNamedFunctionSymbol
+                    function?.isSuspend == true
+                }
+            } != false) return null
+
+        if (anyDescendantOfType<PsiComment> {
+                !receiver.textRange.contains(it.textRange) && !lambda.textRange.contains(it.textRange)
+            }) return null
+
+        val hookText = if (arguments.text == "()") receiver.text.dropLast(2) else receiver.text
+        return "$hookText ${lambda.text}"
+    }
 
     private fun KaSession.canReify(type: KaType): Boolean = with(type.fullyExpandedType) {
         when {

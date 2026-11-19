@@ -58,6 +58,7 @@ class YukiHookIssueRegistry : IssueRegistry() {
         MemberHookerDetector.INVALID_FIELD_HOOK_TARGET_ISSUE,
         ModuleUsageDetector.USE_MODULE_APPLICATION_ISSUE,
         ModuleUsageDetector.USE_HOOK_INVOCATION_API_ISSUE,
+        ModuleUsageDetector.USE_HOOK_BLOCK_ISSUE,
         KavaRefFallbackDetector.ISSUE
     )
 
