@@ -239,17 +239,23 @@ class HookParam private constructor(
 
         /**
          * Gets the argument instance.
-         * @return [Any] or null.
+         * @return [Any] or null if the value is null or the index is out of bounds.
          */
         fun get() = args.getOrNull(index)
 
         /**
          * Gets the argument instance as [T].
-         * @return [T] or null.
+         * @return [T] or null if the value is null or the index is out of bounds.
          * @throws ClassCastException if the argument cannot be used as [T].
          */
         @JvmName("getTyped")
         fun <T> get() = get() as T?
+
+        /**
+         * Gets the argument instance as [T].
+         * @return [T] or null if the value is null, the index is out of bounds, the argument is null, or its type does not match [T].
+         */
+        inline fun <reified T> getOrNull() = get() as? T?
 
         /**
          * Sets the argument instance.
