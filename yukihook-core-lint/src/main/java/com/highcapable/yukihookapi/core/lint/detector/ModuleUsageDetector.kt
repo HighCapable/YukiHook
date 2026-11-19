@@ -33,12 +33,20 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.resolveManifestName
 import com.android.utils.XmlUtils
 import com.highcapable.yukihookapi.core.lint.DeclaredSymbol
+import com.highcapable.yukihookapi.core.lint.detector.extension.analyzeOrNull
 import com.highcapable.yukihookapi.core.lint.detector.extension.buildReplaceFix
 import com.highcapable.yukihookapi.core.lint.detector.extension.createExternalOnlyUastHandler
 import com.intellij.psi.CommonClassNames
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
+import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.types.KaClassType
+import org.jetbrains.kotlin.analysis.api.types.KaDefinitelyNotNullType
+import org.jetbrains.kotlin.analysis.api.types.KaErrorType
+import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
 import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.name.StandardClassIds
 import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtCatchClause
@@ -46,6 +54,8 @@ import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtForExpression
 import org.jetbrains.kotlin.psi.KtFunction
+import org.jetbrains.kotlin.psi.KtNameReferenceExpression
+import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtNullableType
 import org.jetbrains.kotlin.psi.KtParenthesizedExpression
 import org.jetbrains.kotlin.psi.KtProperty
@@ -64,10 +74,12 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
         private const val APPLICATION = "android.app.Application"
         private const val MODULE_APPLICATION = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.xposed.application.ModuleApplication"
         private const val HOOK_INVOCATION = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.HookInvocation"
+        private const val HOOK_PARAM = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.HookParam"
 
         private const val INSTANCE_GETTER = "getInstance"
         private const val INSTANCE_OR_NULL_GETTER = "getInstanceOrNull"
         private const val MEMBER_GETTER = "getMember"
+        private const val RESULT_GETTER = "getResult"
 
         private const val METHOD_CLASS = "java.lang.reflect.Method"
         private const val STAR_CONSTRUCTOR_TYPE = "java.lang.reflect.Constructor<?>"
@@ -109,8 +121,8 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             id = "UseHookInvocationApi",
             briefDescription = "Use HookInvocation's API instead of casting",
             explanation = """
-                Casting the instance or the member in a hook callback can be simplified by using the APIs \
-                provided by `HookInvocation`.
+                Casting the instance, member, or result in a hook callback can be simplified by using the APIs \
+                provided by `HookInvocation` and `HookParam`.
 
                 See the documentation for more details:
                 - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core
@@ -122,6 +134,9 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 - `method` to get the hooked method
                 - `constructor` to get the hooked constructor
 
+                `HookParam.result<T>()` returns null when the result is absent or has a different type.
+                Use it in place of a regular cast when you want to handle those cases as null.
+
                 Examples:
                 ```kotlin
                 // Before
@@ -132,6 +147,7 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 instanceOrNull as Activity?
                 member as Method
                 member as Constructor<*>
+                result as? String
 
                 // After
                 instance<Activity>()
@@ -141,6 +157,7 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 instanceOrNull<Activity>()
                 method
                 constructor
+                result<String>()
                 ```
             """.trimIndent(),
             category = Category.PRODUCTIVITY,
@@ -176,34 +193,44 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             val source = node.sourcePsi as? KtBinaryExpressionWithTypeRHS ?: return
             val typeReference = source.right ?: return
             val getter = (node.operand.skipParenthesizedExprDown() as? UResolvable)?.resolve() as? PsiMethod ?: return
-            if (getter.containingClass?.qualifiedName != HOOK_INVOCATION) return
+            val isResult = getter.name == RESULT_GETTER
+            val declaringClass = if (isResult) HOOK_PARAM else HOOK_INVOCATION
+            if (getter.containingClass?.qualifiedName != declaringClass) return
 
             val isSafeCast = source.operationReference.getReferencedNameElementType() == KtTokens.AS_SAFE
             val castType = node.type.canonicalText
             val propertyName = getter.name.removePrefix("get").replaceFirstChar { it.lowercase() }
+            val operand = KtPsiUtil.safeDeparenthesize(source.left)
+            val selector = if (operand is KtQualifiedExpression) operand.selectorExpression else operand
+            val nullableType = typeReference.typeElement as? KtNullableType
 
             // Casting the instance to Any is already redundant.
-            if (getter.name != MEMBER_GETTER && castType == CommonClassNames.JAVA_LANG_OBJECT) return
+            if (!isResult && getter.name != MEMBER_GETTER && castType == CommonClassNames.JAVA_LANG_OBJECT) return
             val replacementName = when (getter.name) {
                 INSTANCE_GETTER if !isSafeCast -> "instance"
                 // A non-null cast already throws when the instance is absent, the same as instance<T>().
-                INSTANCE_OR_NULL_GETTER if !isSafeCast && typeReference.typeElement !is KtNullableType -> "instance"
+                INSTANCE_OR_NULL_GETTER if !isSafeCast && nullableType == null -> "instance"
                 INSTANCE_GETTER, INSTANCE_OR_NULL_GETTER -> "instanceOrNull"
                 MEMBER_GETTER if isSafeCast -> return
                 MEMBER_GETTER if castType == METHOD_CLASS -> "method"
                 MEMBER_GETTER if castType == STAR_CONSTRUCTOR_TYPE -> "constructor"
+                RESULT_GETTER if selector is KtNameReferenceExpression &&
+                    typeReference.analyzeOrNull { canReify(typeReference.type) } == true -> "result"
                 else -> return
             }
-            val replacement = if (getter.name == MEMBER_GETTER) replacementName else "$replacementName<${typeReference.text}>()"
+            val typeText = if (isResult) nullableType?.innerType?.text ?: typeReference.text else typeReference.text
+            val replacement = if (getter.name == MEMBER_GETTER) replacementName else "$replacementName<$typeText>()"
 
             // Keep the explicit receiver, e.g. "param.instance as T" becomes "param.instance<T>()".
-            val operand = KtPsiUtil.safeDeparenthesize(source.left)
             val receiverPrefix = (operand as? KtQualifiedExpression)?.selectorExpression?.let {
                 operand.text.substring(0, it.textRange.startOffset - operand.textRange.startOffset)
             } ?: ""
             val fixedText = receiverPrefix + replacement
-            // Without an explicit receiver, a local declaration with the new name would shadow the HookInvocation property.
-            val isShadowed = receiverPrefix.isEmpty() && replacementName != propertyName && source.hasLocalDeclaration(replacementName)
+            // A local declaration can shadow an unqualified replacement.
+            val isShadowed = receiverPrefix.isEmpty() && (isResult || replacementName != propertyName) &&
+                source.hasLocalDeclaration(replacementName, includeFunctions = isResult)
+            // A regular cast can throw, while result<T>() returns null.
+            val isThrowingResultCast = isResult && !isSafeCast
             // The replacement is a postfix expression, so parentheses that only wrap the cast are no longer needed.
             val replaceTarget = generateSequence(source.parent) { it.parent }
                 .takeWhile { it is KtParenthesizedExpression }
@@ -213,8 +240,9 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 issue = USE_HOOK_INVOCATION_API_ISSUE,
                 scope = node as UElement,
                 location = context.getLocation(source),
-                message = "Can be replaced with `$fixedText`",
-                quickfixData = if (isShadowed) null else buildReplaceFix(
+                message = if (isThrowingResultCast) "Use `$fixedText` to return null for a missing or mismatched result"
+                else "Can be replaced with `$fixedText`",
+                quickfixData = if (isShadowed || isThrowingResultCast) null else buildReplaceFix(
                     name = "Replace with '$replacementName'",
                     replacement = fixedText,
                     range = context.getLocation(replaceTarget),
@@ -224,13 +252,23 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
         }
     })
 
-    private fun KtElement.hasLocalDeclaration(name: String) =
+    private fun KaSession.canReify(type: KaType): Boolean = with(type.fullyExpandedType) {
+        when {
+            this is KaErrorType || this is KaDefinitelyNotNullType || isNothingType -> false
+            this is KaTypeParameterType -> symbol.isReified
+            this is KaClassType && classId == StandardClassIds.Array -> typeArguments.single().type?.let { canReify(it) } ?: true
+            else -> true
+        }
+    }
+
+    private fun KtElement.hasLocalDeclaration(name: String, includeFunctions: Boolean) =
         generateSequence<PsiElement>(this) { it.parent }.zipWithNext().any { (child, parent) ->
             when (parent) {
                 // A local declaration is only visible after itself, not in its own initializer.
                 is KtBlockExpression -> parent.statements.takeWhile { it != child }.any { statement ->
                     (statement is KtProperty && statement.name == name) ||
-                        (statement is KtDestructuringDeclaration && statement.entries.any { it.name == name })
+                        (statement is KtDestructuringDeclaration && statement.entries.any { it.name == name }) ||
+                        (includeFunctions && statement is KtNamedFunction && statement.name == name)
                 }
                 is KtFunction -> parent.valueParameters.any { it.name == name }
                 is KtForExpression -> parent.loopParameter?.name == name ||
