@@ -36,10 +36,31 @@ class ModuleUsageDetectorTest : LintDetectorTest() {
 
         private val hookParam = kotlin("""
             package com.highcapable.yukihookapi.hook.param
-            abstract class HookInvocation
+            import java.lang.reflect.Constructor
+            import java.lang.reflect.Method
+
+            abstract class HookInvocation {
+                val method: Method get() = error("stub")
+                val constructor: Constructor<*> get() = error("stub")
+            }
             class HookParam : HookInvocation() {
                 var result: Any? = null
                 inline fun <reified T> result(): T? = null
+                val args: Array<Any?> = emptyArray()
+                fun arg(index: Int) = ArgumentEditor()
+                fun firstArg() = ArgumentEditor()
+                fun lastArg() = ArgumentEditor()
+                class ArgumentEditor {
+                    fun get(): Any? = null
+                    @JvmName("getTyped")
+                    fun <T> get(): T? = null
+                    inline fun <reified T> getOrNull(): T? = null
+                    fun <T> set(value: T?) = Unit
+                }
+            }
+            class HookChain : HookInvocation() {
+                val args: List<Any?> = emptyList()
+                fun arg(index: Int): Any? = null
             }
         """).indented()
 
@@ -103,8 +124,8 @@ class ModuleUsageDetectorTest : LintDetectorTest() {
             """.trimIndent())
     }
 
-    fun testRegularResultCastsSuggestTheNullableApiWithoutOfferingAFix() {
-        lint().files(hookParam, kotlin("""
+    fun testRegularResultCastsOfferFixesWithTheOriginalNullability() {
+        lint().files(hookParam, kotlin("src/test/pkg/Results.kt", """
             package test.pkg
             import com.highcapable.yukihookapi.hook.param.HookParam
 
@@ -112,8 +133,16 @@ class ModuleUsageDetectorTest : LintDetectorTest() {
             fun nullable(param: HookParam): Int? = (param.result as String?)?.length
         """).indented()).testModes(TestMode.DEFAULT).run()
             .expectCount(2, Severity.INFORMATIONAL)
-            .expectContains("Use param.result<String>() to return null for a missing or mismatched result")
-            .expectFixDiffs("")
+            .expectFixDiffs("""
+                Fix for src/test/pkg/Results.kt line 4: Replace with 'result':
+                @@ -4 +4
+                - fun required(param: HookParam): Int = (param.result as String).length
+                + fun required(param: HookParam): Int = param.result<String>()!!.length
+                Fix for src/test/pkg/Results.kt line 5: Replace with 'result':
+                @@ -5 +5
+                - fun nullable(param: HookParam): Int? = (param.result as String?)?.length
+                + fun nullable(param: HookParam): Int? = param.result<String>()?.length
+            """.trimIndent())
     }
 
     fun testUnrelatedPropertiesAndNonReifiedTypesDoNotGetSuggestions() {
@@ -129,7 +158,7 @@ class ModuleUsageDetectorTest : LintDetectorTest() {
         """).indented()).testModes(TestMode.DEFAULT).run().expectClean()
     }
 
-    fun testLocalResultFunctionDoesNotGetAQuickFix() {
+    fun testLocalResultFunctionDoesNotGetASuggestion() {
         lint().files(hookParam, kotlin("""
             package test.pkg
             import com.highcapable.yukihookapi.hook.param.HookParam
@@ -138,9 +167,233 @@ class ModuleUsageDetectorTest : LintDetectorTest() {
                 fun <T> result(): T? = null
                 val value = result as? String
             }
+        """).indented()).testModes(TestMode.DEFAULT).run().expectClean()
+    }
+
+    fun testArgumentCastsAndWritesUseTheEditor() {
+        lint().files(hookParam, kotlin("src/test/pkg/Arguments.kt", """
+            package test.pkg
+            import com.highcapable.yukihookapi.hook.param.HookParam
+
+            fun HookParam.edit(param: HookParam, i: Int) {
+                val a = args[i] as String?
+                val b = (param.args[0] as? List<String?>?)?.size
+                val c = args[i] as? String
+                args[i] = a
+                param.args[0] = null
+            }
         """).indented()).testModes(TestMode.DEFAULT).run()
-            .expectCount(1, Severity.INFORMATIONAL)
-            .expectFixDiffs("")
+            .expectCount(5, Severity.INFORMATIONAL)
+            .expectFixDiffs("""
+                Fix for src/test/pkg/Arguments.kt line 5: Replace with 'arg(index).get':
+                @@ -5 +5
+                -     val a = args[i] as String?
+                +     val a = arg(i).get<String>()
+                Fix for src/test/pkg/Arguments.kt line 6: Replace with 'firstArg().getOrNull':
+                @@ -6 +6
+                -     val b = (param.args[0] as? List<String?>?)?.size
+                +     val b = param.firstArg().getOrNull<List<String?>>()?.size
+                Fix for src/test/pkg/Arguments.kt line 7: Replace with 'arg(index).getOrNull':
+                @@ -7 +7
+                -     val c = args[i] as? String
+                +     val c = arg(i).getOrNull<String>()
+                Fix for src/test/pkg/Arguments.kt line 8: Replace with 'arg(index).set':
+                @@ -8 +8
+                -     args[i] = a
+                +     arg(i).set(a)
+                Fix for src/test/pkg/Arguments.kt line 9: Replace with 'firstArg().set':
+                @@ -9 +9
+                -     param.args[0] = null
+                +     param.firstArg().set(null)
+            """.trimIndent())
+    }
+
+    fun testNonNullArgumentCastOffersAnAssertedRead() {
+        lint().files(hookParam, kotlin("src/test/pkg/NonNullCasts.kt", """
+            package test.pkg
+            import com.highcapable.yukihookapi.hook.param.HookParam
+
+            fun HookParam.read() = (args[0] as String).length
+            fun <T> HookParam.readGeneric(): T = args[0] as T
+        """).indented()).testModes(TestMode.DEFAULT).run()
+            .expectCount(2, Severity.INFORMATIONAL)
+            .expectFixDiffs("""
+                Fix for src/test/pkg/NonNullCasts.kt line 4: Replace with 'firstArg().get':
+                @@ -4 +4
+                - fun HookParam.read() = (args[0] as String).length
+                + fun HookParam.read() = firstArg().get<String>()!!.length
+                Fix for src/test/pkg/NonNullCasts.kt line 5: Replace with 'firstArg().get':
+                @@ -5 +5
+                - fun <T> HookParam.readGeneric(): T = args[0] as T
+                + fun <T> HookParam.readGeneric(): T = (firstArg().get<T>() as T)
+            """.trimIndent())
+    }
+
+    fun testArgumentEditorCastsMoveTheTypeIntoTheRead() {
+        lint().files(hookParam, kotlin("src/test/pkg/Editor.kt", """
+            package test.pkg
+            import com.highcapable.yukihookapi.hook.param.HookParam
+
+            fun HookParam.read(param: HookParam?, index: Int) {
+                val a = firstArg().get() as String?
+                val b = (param?.arg(index)?.get() as? List<String?>?)?.size
+                val c = lastArg().get<Any>() as? String
+                val d = lastArg().getOrNull<CharSequence>() as? String?
+                val e = firstArg().getOrNull<Any?>() as String?
+            }
+        """).indented()).testModes(TestMode.DEFAULT).run()
+            .expectCount(5, Severity.INFORMATIONAL)
+            .expectFixDiffs("""
+                Fix for src/test/pkg/Editor.kt line 5: Replace with 'firstArg().get':
+                @@ -5 +5
+                -     val a = firstArg().get() as String?
+                +     val a = firstArg().get<String>()
+                Fix for src/test/pkg/Editor.kt line 6: Replace with 'arg(index).getOrNull':
+                @@ -6 +6
+                -     val b = (param?.arg(index)?.get() as? List<String?>?)?.size
+                +     val b = param?.arg(index)?.getOrNull<List<String?>>()?.size
+                Fix for src/test/pkg/Editor.kt line 7: Replace with 'lastArg().getOrNull':
+                @@ -7 +7
+                -     val c = lastArg().get<Any>() as? String
+                +     val c = lastArg().getOrNull<String>()
+                Fix for src/test/pkg/Editor.kt line 8: Replace with 'lastArg().getOrNull':
+                @@ -8 +8
+                -     val d = lastArg().getOrNull<CharSequence>() as? String?
+                +     val d = lastArg().getOrNull<String>()
+                Fix for src/test/pkg/Editor.kt line 9: Replace with 'firstArg().get':
+                @@ -9 +9
+                -     val e = firstArg().getOrNull<Any?>() as String?
+                +     val e = firstArg().get<String>()
+            """.trimIndent())
+    }
+
+    fun testArgumentEditorCastsOfferFixesRegardlessOfUsage() {
+        lint().files(hookParam, kotlin("src/test/pkg/NullableCasts.kt", """
+            package test.pkg
+            import com.highcapable.yukihookapi.hook.param.HookParam
+
+            fun HookParam.read() = (firstArg().get() as String).length
+            fun HookParam.widen(): Any? = firstArg().get() as String?
+            fun HookParam.discard() {
+                firstArg().get() as String?
+            }
+            fun HookParam.widenArrayRead(): Any? = args[1] as String?
+        """).indented()).testModes(TestMode.DEFAULT).run()
+            .expectCount(4, Severity.INFORMATIONAL)
+            .expectFixDiffs("""
+                Fix for src/test/pkg/NullableCasts.kt line 4: Replace with 'firstArg().get':
+                @@ -4 +4
+                - fun HookParam.read() = (firstArg().get() as String).length
+                + fun HookParam.read() = firstArg().get<String>()!!.length
+                Fix for src/test/pkg/NullableCasts.kt line 5: Replace with 'firstArg().get':
+                @@ -5 +5
+                - fun HookParam.widen(): Any? = firstArg().get() as String?
+                + fun HookParam.widen(): Any? = firstArg().get<String>()
+                Fix for src/test/pkg/NullableCasts.kt line 7: Replace with 'firstArg().get':
+                @@ -7 +7
+                -     firstArg().get() as String?
+                +     firstArg().get<String>()
+                Fix for src/test/pkg/NullableCasts.kt line 9: Replace with 'arg(index).get':
+                @@ -9 +9
+                - fun HookParam.widenArrayRead(): Any? = args[1] as String?
+                + fun HookParam.widenArrayRead(): Any? = arg(1).get<String>()
+            """.trimIndent())
+    }
+
+    fun testArgumentEditorCastsRetainIndependentTypeChecks() {
+        lint().files(hookParam, kotlin("""
+            package test.pkg
+            import com.highcapable.yukihookapi.hook.param.HookParam
+
+            class Other {
+                fun get(): Any? = null
+                fun <T> getOrNull(): T? = null
+            }
+            fun HookParam.read(other: Other) {
+                firstArg().getOrNull<String>() as? CharSequence
+                firstArg().getOrNull<CharSequence>() as String?
+                firstArg().get<CharSequence>() as? String
+                other.get() as? String
+                other.getOrNull<Any>() as? String
+            }
+        """).indented()).testModes(TestMode.DEFAULT).run().expectClean()
+    }
+
+    fun testFirstAndLastArgUseTheCurrentInvocation() {
+        lint().files(hookParam, kotlin("src/test/pkg/Positions.kt", """
+            package test.pkg
+            import com.highcapable.yukihookapi.hook.param.HookParam
+
+            fun HookParam.read(param: HookParam, optional: HookParam?) {
+                optional?.arg(index = 0)
+                arg(args.size - 1)
+                param.arg(param.method.parameterTypes.lastIndex)
+                val types = constructor.parameterTypes
+                val last = types.size - 1
+                arg(last)
+                val methodRef = method
+                arg(methodRef.parameterTypes.size - 1)
+                param.args[param.args.lastIndex] = null
+            }
+        """).indented()).testModes(TestMode.DEFAULT).run()
+            .expectCount(6, Severity.INFORMATIONAL)
+            .expectFixDiffs("""
+                Fix for src/test/pkg/Positions.kt line 5: Replace with 'firstArg':
+                @@ -5 +5
+                -     optional?.arg(index = 0)
+                +     optional?.firstArg()
+                Fix for src/test/pkg/Positions.kt line 6: Replace with 'lastArg':
+                @@ -6 +6
+                -     arg(args.size - 1)
+                +     lastArg()
+                Fix for src/test/pkg/Positions.kt line 7: Replace with 'lastArg':
+                @@ -7 +7
+                -     param.arg(param.method.parameterTypes.lastIndex)
+                +     param.lastArg()
+                Fix for src/test/pkg/Positions.kt line 10: Replace with 'lastArg':
+                @@ -10 +10
+                -     arg(last)
+                +     lastArg()
+                Fix for src/test/pkg/Positions.kt line 12: Replace with 'lastArg':
+                @@ -12 +12
+                -     arg(methodRef.parameterTypes.size - 1)
+                +     lastArg()
+                Fix for src/test/pkg/Positions.kt line 13: Replace with 'lastArg().set':
+                @@ -13 +13
+                -     param.args[param.args.lastIndex] = null
+                +     param.lastArg().set(null)
+            """.trimIndent())
+    }
+
+    fun testOtherArraysHookChainsAndUnknownArgumentPositionsAreIgnored() {
+        lint().files(hookParam, kotlin("""
+            package test.pkg
+            import com.highcapable.yukihookapi.hook.param.HookChain
+            import com.highcapable.yukihookapi.hook.param.HookParam
+            import java.lang.reflect.Method
+
+            fun HookParam.edit(args: Array<Any?>, other: HookParam, unrelated: Method) {
+                val value = args[0] as? String
+                args[0] = value
+                this.args[0]?.toString()
+                arg(1)
+                arg(this.args.size - 2)
+                arg(other.method.parameterTypes.lastIndex)
+                arg(unrelated.parameterTypes.size - 1)
+                var last = method.parameterTypes.lastIndex
+                last--
+                arg(last)
+            }
+            fun HookChain.read() {
+                args[0] as? String
+                arg(0)
+                arg(method.parameterTypes.lastIndex)
+            }
+            fun HookParam.localArg() {
+                fun arg(i: Int) = i
+                arg(0)
+            }
+        """).indented()).testModes(TestMode.DEFAULT).run().expectClean()
     }
 
     fun testHookBlocksKeepPriorityAndSafeReceivers() {
