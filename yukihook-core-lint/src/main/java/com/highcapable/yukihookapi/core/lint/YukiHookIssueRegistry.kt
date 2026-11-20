@@ -59,6 +59,7 @@ class YukiHookIssueRegistry : IssueRegistry() {
         ModuleUsageDetector.USE_MODULE_APPLICATION_ISSUE,
         ModuleUsageDetector.USE_HOOK_INVOCATION_API_ISSUE,
         ModuleUsageDetector.USE_HOOK_BLOCK_ISSUE,
+        ModuleUsageDetector.USE_APPLICATION_READY_ISSUE,
         KavaRefFallbackDetector.ISSUE
     )
 

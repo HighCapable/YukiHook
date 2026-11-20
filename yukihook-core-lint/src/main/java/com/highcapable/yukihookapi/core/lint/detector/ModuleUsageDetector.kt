@@ -36,6 +36,7 @@ import com.highcapable.yukihookapi.core.lint.DeclaredSymbol
 import com.highcapable.yukihookapi.core.lint.detector.extension.analyzeOrNull
 import com.highcapable.yukihookapi.core.lint.detector.extension.buildReplaceFix
 import com.highcapable.yukihookapi.core.lint.detector.extension.createExternalOnlyUastHandler
+import com.highcapable.yukihookapi.core.lint.detector.matcher.LifecycleHookMatcher
 import com.intellij.psi.CommonClassNames
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
@@ -297,6 +298,64 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 Scope.JAVA_FILE_SCOPE
             )
         )
+
+        val USE_APPLICATION_READY_ISSUE = Issue.create(
+            id = "UseApplicationReady",
+            briefDescription = "Use withApplicationReady for host application initialization",
+            explanation = """
+                Use `withApplicationReady` when a lifecycle hook only obtains the host `Application` or `Context` for initialization. \
+                When declared from `onHook`, the callback runs again with the existing application after module reload, \
+                while completed Android lifecycle events are not replayed.
+
+                See the documentation for more details:
+                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core
+                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-core
+
+                Keep the lifecycle hook if you need its exact timing, a specific component or base context, or need to change the invocation. \
+                The ready callback may run immediately when the application is already available.
+
+                Examples:
+                ```kotlin
+                // Before
+                Instrumentation::class.java.getMethod("callApplicationOnCreate", Application::class.java).hook {
+                    after {
+                        firstArg().get<Application>()?.let { application -> initialize(application) }
+                    }
+                }
+
+                // After
+                withApplicationReady { application -> initialize(application) }
+                ```
+
+                In a chain interceptor, this check looks for a callback that calls `proceed()` without changing the invocation \
+                and returns the downstream result unchanged. Without `proceed()`, the interceptor skips the remaining chain and the original call.
+
+                ```kotlin
+                // Before
+                Instrumentation::class.resolve().firstMethod {
+                    name = "callApplicationOnCreate"
+                }.intercept {
+                    proceed().also {
+                        firstArg<Application>()?.let { application -> initialize(application) }
+                    }
+                }
+
+                // After
+                withApplicationReady { application -> initialize(application) }
+                ```
+
+                The same applies to `method { ... }.interceptAll { ... }` when the callback only observes the invocation. \
+                `callApplicationOnCreate` receives an `Application` as its first argument; \
+                `callActivityOnCreate` receives an `Activity`, so use its `application` or `applicationContext` if you only need the host application.
+            """.trimIndent(),
+            category = Category.PRODUCTIVITY,
+            priority = 5,
+            severity = Severity.INFORMATIONAL,
+            implementation = Implementation(
+                ModuleUsageDetector::class.java,
+                Scope.JAVA_FILE_SCOPE
+            )
+        )
     }
 
     private class InvocationReplacement(
@@ -328,6 +387,7 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
     override fun createUastHandler(context: JavaContext) = context.createExternalOnlyUastHandler(object : UElementHandler() {
 
         private val applicationName = context.findManifestApplicationName()
+        private val reportedApplicationReadyHooks = mutableSetOf<KtCallExpression>()
 
         override fun visitClass(node: UClass) {
             if (node.qualifiedName != applicationName) return
@@ -351,7 +411,25 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                     checkChainArgumentCall(node, call)
                 }
                 "argOrNull", "getOrNull", "firstOrNull", "lastOrNull" -> checkChainArgumentCall(node, call)
+                else -> if (context.isEnabled(USE_APPLICATION_READY_ISSUE)) checkApplicationReady(call)
             }
+        }
+
+        private fun checkApplicationReady(call: KtCallExpression) {
+            val name = (call.calleeExpression as? KtNameReferenceExpression)?.getReferencedName() ?: return
+            if (name !in LifecycleHookMatcher.callbackNames) return
+            val match = call.analyzeOrNull { LifecycleHookMatcher(context, this).match(call) } ?: return
+            if (!reportedApplicationReadyHooks.add(match.anchor)) return
+
+            val message = when (match.advice) {
+                LifecycleHookMatcher.Advice.DIRECT -> "Use `withApplicationReady` for host application initialization " +
+                    "so it also runs after module reload"
+                LifecycleHookMatcher.Advice.TIMING_DEPENDENT -> "If initialization does not depend on this lifecycle event or its " +
+                    "timing, use `withApplicationReady` to run it again after module reload"
+                LifecycleHookMatcher.Advice.COMPONENT_AS_APPLICATION -> "Reading a component as `Application` does not retrieve its application. " +
+                    "If initialization only needs the host application and does not depend on this lifecycle event, use `withApplicationReady`"
+            }
+            context.report(USE_APPLICATION_READY_ISSUE, match.expression, context.getLocation(match.expression), message)
         }
 
         private fun checkHookApply(node: UCallExpression, applyCall: KtCallExpression) {
