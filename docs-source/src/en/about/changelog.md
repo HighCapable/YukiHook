@@ -14,7 +14,56 @@ Time zone of version release date: **UTC+8**
 
 :::
 
-### 1.5.0 | 2026.10.20 &ensp;<Badge type="latest" text="latest" vertical="middle" />
+### 1.5.1 | 2026.11.20 &ensp;<Badge type="latest" text="latest" vertical="middle" />
+
+- Added a YukiHook Agent Skill to guide AI coding assistants through module setup, API usage and migration. See [Agent Skills](https://github.com/HighCapable/YukiHook/blob/1.x/README.md#agent-skills) for details
+
+#### yukihook-core
+
+- <u>**⚠️ Breaking Change:**</u> Editing the module's shared preferences in a host now throws `UnsupportedOperationException`. Check `isWritable` before editing
+- <u>**⚠️ Breaking Change:**</u> `ModulePreferenceFragment.onCreatePreferences` is now final and `onCreatePreferencesInModuleApp` has been removed. Move your initialization code to `onPreferencesReady`
+- <u>**⚠️ Breaking Change:**</u> `Method.invokeSpecial<T>()` now returns `T?`. Handle possible `null` results
+- <u>**⚠️ Breaking Change:**</u> Use `hookAllByMember` from Java to call `Collection<Member>.hookAll` with a configuration block. Kotlin callers only need to recompile
+- Debug logs now consistently show the process name. Deprecated ~~`YLog.Config.PACKAGE_NAME`~~ and ~~`YLogData.packageName`~~, please use `YLog.Config.PROCESS_NAME` and `YLogData.processName` now
+- Shared preferences now use temporary in-memory storage when unavailable. These changes are lost when the process exits and are never written back when persistent storage becomes available. Check `isAvailable` before relying on persistent storage
+- Added `Fragment.dataChannel` and `Fragment.systemDataChannel` so fragments in the same `Activity` can listen to the same key independently. Listeners are removed when their views are destroyed
+- The data channel now delivers messages to the most recently resumed module `Activity` in each task, including tasks in the background
+- Added `ArgumentEditor.getOrNull<T>()` for classic hooks to return `null` when the argument is missing or its type does not match
+- Added `argOrNull`, `firstArgOrNull` and `lastArgOrNull` for safely reading optional arguments in chain hooks
+- `registerModuleLifecycle` can now be called from `onInit` with the Xposed 82 base module. Hot reload still requires a base module that supports it
+- Fixed a registration failure for `registerModuleLifecycle` and `registerFrameworkEvents` when `onInit` is delegated
+- Calling the module overloads of `encase` outside the entry point's `onHook` now throws an exception
+- Fixed application lifecycle broadcast callbacks ignoring the `throwToHostOnFailure` setting
+- Fixed a host crash when an application lifecycle callback encounters an auxiliary `Application` without an attached `Context`
+- Fixed an issue where a listener exception for a segmented data channel message was reported as a failure to reassemble the message
+- Fixed an exception when injecting module resources on Android 11 and above if the module APK path is unavailable
+- Fixed a possible host crash when hot reload ran initialization code with unavailable module resources
+- Fixed an issue that kept old module classes in memory after hot reload because of `Parcelable` caching, and a state restoration failure when hot reloading from `1.5.0` to `1.5.1`
+- Improved [Lint Rules](../config/lint-rules.md) for module entry calls and APIs specific to a base module
+- Extended `UseHookInvocationApi` with suggestions and quick fixes for argument access, return values and continuing the hook chain
+- Added `UseHookBlock` to suggest configuring hooks with `hook { ... }` and `hookAll { ... }`
+- Added `UseApplicationReady` to suggest using `withApplicationReady`, which supports hot reload, when lifecycle hooks are used to obtain the host's `Application`
+
+#### yukihook-compiler
+
+- Fixed a build failure when generating the libxposed module entry on JDK versions below 21
+
+#### yukihook-extension-kavaref
+
+- <u>**⚠️ Breaking Change:**</u> `MethodResolver.invokeSpecial<T>()` now returns `T?`. Handle possible `null` results
+- Added support for finding hidden fields on Android 9 and above with `AndroidHiddenApiBypassResolver`
+- Fixed incorrect Lint warnings about the host class loader for some KavaRef calls
+
+#### yukihook-runtime-libxposed
+
+- `YukiHook.Status.observeFrameworkService` is now annotated with `@MainThread`. Register listeners on the main thread
+- Fixed an exception in `onModuleLoaded` causing a successfully initialized module to be marked as failed
+
+#### yukihook-runtime-xposed82
+
+- Fixed `onInitZygote` being called after module initialization failed
+
+### 1.5.0 | 2026.10.20 &ensp;<Badge type="warning" text="stale" vertical="middle" />
 
 - This is a major update, the project has been officially renamed to YukiHook and is now published as multiple modules, please refer to [Migration to YukiHook 1.5.x](../config/migration-1-5-x.md) for details
 - All modules are released with a unified version, and the `groupId` of the dependencies and the package name of the code are still `com.highcapable.yukihookapi`

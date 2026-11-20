@@ -8,7 +8,56 @@
 
 :::
 
-### 1.5.0 | 2026.10.20 &ensp;<Badge type="latest" text="最新" vertical="middle" />
+### 1.5.1 | 2026.11.20 &ensp;<Badge type="latest" text="最新" vertical="middle" />
+
+- 新增 YukiHook Agent Skill，可为 AI 编程助手提供模块配置、API 用法与迁移指引，详情请参考 [Agent Skills](https://github.com/HighCapable/YukiHook/blob/1.x/README-zh-CN.md#agent-skills)
+
+#### yukihook-core
+
+- <u>**⚠️ 破坏性更新：**</u>在宿主中修改模块的共享偏好设置时，现在会抛出 `UnsupportedOperationException`，修改前请使用 `isWritable` 判断是否可写
+- <u>**⚠️ 破坏性更新：**</u>`ModulePreferenceFragment` 的 `onCreatePreferences` 不再允许覆写，已移除 `onCreatePreferencesInModuleApp`，请将初始化代码迁移至 `onPreferencesReady`
+- <u>**⚠️ 破坏性更新：**</u>`Method.invokeSpecial<T>()` 的返回值类型改为 `T?`，请处理可能的 `null` 返回值
+- <u>**⚠️ 破坏性更新：**</u>从 Java 调用带配置块的 `Collection<Member>.hookAll` 时，请使用 `hookAllByMember`，Kotlin 调用方重新编译即可
+- 调试日志统一显示进程名，弃用了 ~~`YLog.Config.PACKAGE_NAME`~~ 与 ~~`YLogData.packageName`~~，现在请使用 `YLog.Config.PROCESS_NAME` 与 `YLogData.processName`
+- 共享偏好设置不可用时改用临时内存存储，数据会在进程退出后丢失，也不会在存储恢复可用后写回，请使用 `isAvailable` 判断当前是否可用
+- 新增 `Fragment.dataChannel` 与 `Fragment.systemDataChannel`，同一 `Activity` 中的不同 `Fragment` 可以各自监听相同的 `key`，监听会在视图销毁时自动移除
+- 数据通道现在按任务向最近一次进入 `RESUMED` 状态的模块 `Activity` 分发消息，任务退到后台后仍可接收
+- 新增经典 Hook 的 `ArgumentEditor.getOrNull<T>()`，读取不到参数或类型不匹配时返回 `null`
+- 链式 Hook 新增 `argOrNull`、`firstArgOrNull` 与 `lastArgOrNull`，可以安全读取可选参数
+- `registerModuleLifecycle` 现在也可在 Xposed 82 底座的 `onInit` 中注册，执行热重载仍需要支持热重载的底座
+- 修复通过委托实现 `onInit` 时，`registerModuleLifecycle` 与 `registerFrameworkEvents` 可能无法注册的问题
+- 在模块入口的 `onHook` 之外调用模块版 `encase` 时，现在会抛出异常
+- 修复应用生命周期中的广播回调未遵循 `throwToHostOnFailure` 设置的问题
+- 修复宿主创建未附加 `Context` 的辅助 `Application` 时，生命周期回调可能导致宿主崩溃的问题
+- 修复分片消息的监听回调抛出异常时，被误报为数据通道分片合并失败的问题
+- 修复 Android 11 及以上系统中，模块 APK 路径不可用时资源注入可能直接抛出异常的问题
+- 修复模块资源不可用时热重载仍执行初始化代码，可能导致宿主崩溃的问题
+- 修复热重载后旧模块可能因 `Parcelable` 缓存无法释放的问题，以及从 `1.5.0` 热重载到 `1.5.1` 时可能出现的状态恢复失败问题
+- 改进 [Lint 静态检查规范](../config/lint-rules.md) 对模块入口调用和底座模块专属 API 的检查
+- 扩展 `UseHookInvocationApi`，为经典 Hook 和链式 Hook 中的参数、返回值及调用链写法提供提示和快速修复
+- 新增 `UseHookBlock`，建议使用 `hook { ... }` 与 `hookAll { ... }` 配置 Hook
+- 新增 `UseApplicationReady`，在手动 Hook 生命周期来获取宿主 `Application` 时，提示可以使用支持热重载的 `withApplicationReady`
+
+#### yukihook-compiler
+
+- 修复使用低于 JDK 21 的版本生成 libxposed 模块入口时构建失败的问题
+
+#### yukihook-extension-kavaref
+
+- <u>**⚠️ 破坏性更新：**</u>`MethodResolver.invokeSpecial<T>()` 的返回值类型改为 `T?`，请处理可能的 `null` 返回值
+- `AndroidHiddenApiBypassResolver` 新增在 Android 9 及以上系统中查找隐藏字段的支持
+- 修复部分 KavaRef 调用被 Lint 误报为未使用宿主类加载器的问题
+
+#### yukihook-runtime-libxposed
+
+- `YukiHook.Status.observeFrameworkService` 新增主线程标注，请在主线程注册监听
+- 修复 `onModuleLoaded` 回调抛出异常会使已完成的模块初始化被判定为失败的问题
+
+#### yukihook-runtime-xposed82
+
+- 修复模块初始化失败后仍调用 `onInitZygote` 回调的问题
+
+### 1.5.0 | 2026.10.20 &ensp;<Badge type="warning" text="过旧" vertical="middle" />
 
 - 这是一次重大更新，项目正式更名为 YukiHook，并拆分为多个模块进行发布，详情请参考 [迁移至 YukiHook 1.5.x](../config/migration-1-5-x.md)
 - 全部模块采用统一版本发布，依赖的 `groupId` 与代码的包名依然为 `com.highcapable.yukihookapi`
