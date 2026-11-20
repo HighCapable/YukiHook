@@ -71,8 +71,8 @@ class KavaRefFallbackDetector : Detector(), Detector.UastScanner {
                 by default, its lint checks provide quick fixes for these calls.
 
                 See the documentation for more details:
-                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-extension-kavaref
-                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-extension-kavaref
+                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-extension-kavaref#load-classes-from-the-host
+                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-extension-kavaref#load-classes-from-the-host
 
                 The `${YukiHookProperties.PROJECT_YUKIHOOK_EXTENSION_KAVAREF_MODULE_NAME}` provides:
                 - `toClass` and `toClassOrNull` for `String` and `VariousClass` that use `hostClassLoader` by default

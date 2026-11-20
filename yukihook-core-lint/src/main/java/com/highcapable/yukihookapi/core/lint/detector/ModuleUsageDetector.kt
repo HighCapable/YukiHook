@@ -149,8 +149,8 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 the features of the base module and enable full functionality.
 
                 See the documentation for more details:
-                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core
-                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-core
+                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core/hook-entry#configuration
+                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-core/hook-entry#configuration
 
                 The `ModuleApplication` provides:
                 - Initialization of the features of the base module in the module process
@@ -181,8 +181,8 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 Use the APIs provided by `HookInvocation`, `HookParam`, and `HookChain` to read arguments and cast invocation values.
 
                 See the documentation for more details:
-                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core
-                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-core
+                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core/hook-usage#classic-hook
+                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-core/hook-usage#classic-hook
 
                 The `HookInvocation` provides:
                 - `instance<T>()` to get the instance as `T`
@@ -276,8 +276,8 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 The overload with a configuration block returns a handle, while `apply` returns the hooker.
 
                 See the documentation for more details:
-                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core
-                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-core
+                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core/hook-usage#basic-usage
+                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-core/hook-usage#basic-usage
 
                 Examples:
                 ```kotlin
@@ -308,8 +308,8 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
                 while completed Android lifecycle events are not replayed.
 
                 See the documentation for more details:
-                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core
-                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-core
+                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-core/hook-entry#handle-scopes
+                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-core/hook-entry#handle-scopes
 
                 Keep the lifecycle hook if you need its exact timing, a specific component or base context, or need to change the invocation. \
                 The ready callback may run immediately when the application is already available.

@@ -76,8 +76,8 @@ class PackageParamDetector : Detector(), Detector.UastScanner {
                 from `${DeclaredSymbol.EXTENSION_PACKAGE_NAME}` to load the class from the host.
 
                 See the documentation for more details:
-                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-extension-kavaref
-                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-extension-kavaref
+                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-extension-kavaref#load-classes-from-the-host
+                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-extension-kavaref#load-classes-from-the-host
 
                 The `${DeclaredSymbol.EXTENSION_PACKAGE_NAME}` provides:
                 - `toClass` and `toClassOrNull` for `String` and `VariousClass` that use `hostClassLoader` by default
@@ -122,8 +122,8 @@ class PackageParamDetector : Detector(), Detector.UastScanner {
                 use `hostClassLoader` by default, passing it to the KavaRef functions is unnecessary.
 
                 See the documentation for more details:
-                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-extension-kavaref
-                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-extension-kavaref
+                - English: https://highcapable.github.io/YukiHook/en/library/yukihook-extension-kavaref#load-classes-from-the-host
+                - 简体中文: https://highcapable.github.io/YukiHook/zh-cn/library/yukihook-extension-kavaref#load-classes-from-the-host
 
                 The `${DeclaredSymbol.EXTENSION_PACKAGE_NAME}` provides:
                 - `toClass` and `toClassOrNull` for `String` and `VariousClass` that use `hostClassLoader` by default
