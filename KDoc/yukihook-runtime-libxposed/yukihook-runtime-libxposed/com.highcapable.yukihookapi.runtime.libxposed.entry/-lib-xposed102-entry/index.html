@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>LibXposed102Entry</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
+                    yukihook-runtime-libxposed
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+1.5.1        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
+                        data-filter=":yukihook-runtime-libxposed/release">release</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":yukihook-runtime-libxposed/release"
+                                       data-filter=":yukihook-runtime-libxposed/release"/>
+                                <span class="checkbox--icon"></span>
+                                release
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    yukihook-runtime-libxposed
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="yukihook-runtime-libxposed::com.highcapable.yukihookapi.runtime.libxposed.entry/LibXposed102Entry///PointingToDeclaration//635757565">
+  <div class="breadcrumbs"><a href="../../../index.html">yukihook-runtime-libxposed</a><span class="delimiter">/</span><a href="../index.html">com.highcapable.yukihookapi.runtime.libxposed.entry</a><span class="delimiter">/</span><span class="current">LibXposed102Entry</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Lib</span><wbr></wbr><span><span>Xposed102Entry</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="index.html">LibXposed102Entry</a> : <a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html">LibXposedBaseEntry</a></div><p class="paragraph">Entry for <code class="lang-kotlin">libxposed:api</code> version 102.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="tableheader">Constructors</h2>
+        <div class="table"><a data-name="422688849%2FConstructors%2F635757565" anchor-label="LibXposed102Entry" id="422688849%2FConstructors%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-togglable="CONSTRUCTOR" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-lib-xposed102-entry.html"><span>Lib</span><wbr></wbr><span><span>Xposed102Entry</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="422688849%2FConstructors%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="704740683%2FProperties%2F635757565" anchor-label="apiVersion" id="704740683%2FProperties%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#704740683%2FProperties%2F635757565"><span>api</span><wbr></wbr><span><span>Version</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="704740683%2FProperties%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#704740683%2FProperties%2F635757565">apiVersion</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1899293304%2FProperties%2F635757565" anchor-label="frameworkName" id="-1899293304%2FProperties%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-1899293304%2FProperties%2F635757565"><span>framework</span><wbr></wbr><span><span>Name</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1899293304%2FProperties%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@get:</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a></div></div><span class="token keyword">val </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-1899293304%2FProperties%2F635757565">frameworkName</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1910898848%2FProperties%2F635757565" anchor-label="frameworkProperties" id="-1910898848%2FProperties%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-1910898848%2FProperties%2F635757565"><span>framework</span><wbr></wbr><span><span>Properties</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1910898848%2FProperties%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-1910898848%2FProperties%2F635757565">frameworkProperties</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1511664593%2FProperties%2F635757565" anchor-label="frameworkVersion" id="-1511664593%2FProperties%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-1511664593%2FProperties%2F635757565"><span>framework</span><wbr></wbr><span><span>Version</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1511664593%2FProperties%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@get:</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a></div></div><span class="token keyword">val </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-1511664593%2FProperties%2F635757565">frameworkVersion</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-225992254%2FProperties%2F635757565" anchor-label="frameworkVersionCode" id="-225992254%2FProperties%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-225992254%2FProperties%2F635757565"><span>framework</span><wbr></wbr><span>Version</span><wbr></wbr><span><span>Code</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-225992254%2FProperties%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-225992254%2FProperties%2F635757565">frameworkVersionCode</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2121771327%2FProperties%2F635757565" anchor-label="moduleApplicationInfo" id="2121771327%2FProperties%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#2121771327%2FProperties%2F635757565"><span>module</span><wbr></wbr><span>Application</span><wbr></wbr><span><span>Info</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2121771327%2FProperties%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@get:</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a></div></div><span class="token keyword">val </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#2121771327%2FProperties%2F635757565">moduleApplicationInfo</a><span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/content/pm/ApplicationInfo.html">ApplicationInfo</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="1249058557%2FFunctions%2F635757565" anchor-label="attachFramework" id="1249058557%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#1249058557%2FFunctions%2F635757565"><span>attach</span><wbr></wbr><span><span>Framework</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1249058557%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#1249058557%2FFunctions%2F635757565"><span class="token function">attachFramework</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>base<span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedInterface.html">XposedInterface</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>detachImpl<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/Runnable.html">Runnable</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="504270585%2FFunctions%2F635757565" anchor-label="deoptimize" id="504270585%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#504270585%2FFunctions%2F635757565"><span><span>deoptimize</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="504270585%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#504270585%2FFunctions%2F635757565"><span class="token function">deoptimize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>executable<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/reflect/Executable.html">Executable</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1768184502%2FFunctions%2F635757565" anchor-label="detach" id="1768184502%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#1768184502%2FFunctions%2F635757565"><span><span>detach</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1768184502%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#1768184502%2FFunctions%2F635757565"><span class="token function">detach</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-490436020%2FFunctions%2F635757565" anchor-label="getInvoker" id="-490436020%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#161605404%2FFunctions%2F635757565"><span>get</span><wbr></wbr><span><span>Invoker</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-490436020%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a></div></div><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#161605404%2FFunctions%2F635757565">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt; </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#161605404%2FFunctions%2F635757565"><span class="token function">getInvoker</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>constructor<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/reflect/Constructor.html">Constructor</a><span class="token operator">&lt;</span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedInterfaceWrapper.html#getInvoker(java.lang.reflect.Constructor)">T</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedInterface.CtorInvoker.html">XposedInterface.CtorInvoker</a><span class="token operator">&lt;</span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedInterfaceWrapper.html#getInvoker(java.lang.reflect.Constructor)">T</a><span class="token operator">?</span><span class="token operator">&gt;</span></div><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a></div></div><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#115673564%2FFunctions%2F635757565"><span class="token function">getInvoker</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>method<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/reflect/Method.html">Method</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedInterface.Invoker.html">XposedInterface.Invoker</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token punctuation">, </span><a href="https://developer.android.com/reference/kotlin/java/lang/reflect/Method.html">Method</a><span class="token operator">?</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-883733062%2FFunctions%2F635757565" anchor-label="getRemotePreferences" id="-883733062%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-883733062%2FFunctions%2F635757565"><span>get</span><wbr></wbr><span>Remote</span><wbr></wbr><span><span>Preferences</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-883733062%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a></div></div><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-883733062%2FFunctions%2F635757565"><span class="token function">getRemotePreferences</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/content/SharedPreferences.html">SharedPreferences</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1026872300%2FFunctions%2F635757565" anchor-label="hook" id="-1026872300%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-1026872300%2FFunctions%2F635757565"><span><span>hook</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1026872300%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a></div></div><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-1026872300%2FFunctions%2F635757565"><span class="token function">hook</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>origin<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/reflect/Executable.html">Executable</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedInterface.HookBuilder.html">XposedInterface.HookBuilder</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="649110543%2FFunctions%2F635757565" anchor-label="hookClassInitializer" id="649110543%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#649110543%2FFunctions%2F635757565"><span>hook</span><wbr></wbr><span>Class</span><wbr></wbr><span><span>Initializer</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="649110543%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a></div></div><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#649110543%2FFunctions%2F635757565"><span class="token function">hookClassInitializer</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>origin<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/Class.html">Class</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedInterface.HookBuilder.html">XposedInterface.HookBuilder</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1477182271%2FFunctions%2F635757565" anchor-label="listRemoteFiles" id="-1477182271%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-1477182271%2FFunctions%2F635757565"><span>list</span><wbr></wbr><span>Remote</span><wbr></wbr><span><span>Files</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1477182271%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a></div></div><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-1477182271%2FFunctions%2F635757565"><span class="token function">listRemoteFiles</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1992358165%2FFunctions%2F635757565" anchor-label="log" id="1992358165%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#475967669%2FFunctions%2F635757565"><span><span>log</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1992358165%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#475967669%2FFunctions%2F635757565"><span class="token function">log</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">priority<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a> </span>tag<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>msg<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#1565018412%2FFunctions%2F635757565"><span class="token function">log</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">priority<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a> </span>tag<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>msg<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a> </span>tr<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-832504191%2FFunctions%2F635757565" anchor-label="onHotReloaded" id="-832504191%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-hot-reloaded.html"><span>on</span><wbr></wbr><span>Hot</span><wbr></wbr><span><span>Reloaded</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-832504191%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">override </span><span class="token keyword">fun </span><a href="on-hot-reloaded.html"><span class="token function">onHotReloaded</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">param<span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedModuleInterface.HotReloadedParam.html">XposedModuleInterface.HotReloadedParam</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1151006109%2FFunctions%2F635757565" anchor-label="onHotReloading" id="-1151006109%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-hot-reloading.html"><span>on</span><wbr></wbr><span>Hot</span><wbr></wbr><span><span>Reloading</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1151006109%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">override </span><span class="token keyword">fun </span><a href="on-hot-reloading.html"><span class="token function">onHotReloading</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">param<span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedModuleInterface.HotReloadingParam.html">XposedModuleInterface.HotReloadingParam</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="283958156%2FFunctions%2F635757565" anchor-label="onModuleLoaded" id="283958156%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/on-module-loaded.html"><span>on</span><wbr></wbr><span>Module</span><wbr></wbr><span><span>Loaded</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="283958156%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">override </span><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/on-module-loaded.html"><span class="token function">onModuleLoaded</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">param<span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedModuleInterface.ModuleLoadedParam.html">XposedModuleInterface.ModuleLoadedParam</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="387338304%2FFunctions%2F635757565" anchor-label="onPackageLoaded" id="387338304%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/on-package-loaded.html"><span>on</span><wbr></wbr><span>Package</span><wbr></wbr><span><span>Loaded</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="387338304%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/RequiresApi.html"><span class="token annotation builtin">RequiresApi</span></a><span class="token punctuation">(</span><span>value<span class="token operator"> = </span><span class="breakable-word"><span class="token constant">29</span></span></span><wbr></wbr><span class="token punctuation">)</span></div></div><span class="token keyword">override </span><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/on-package-loaded.html"><span class="token function">onPackageLoaded</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">param<span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedModuleInterface.PackageLoadedParam.html">XposedModuleInterface.PackageLoadedParam</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="337984612%2FFunctions%2F635757565" anchor-label="onPackageReady" id="337984612%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/on-package-ready.html"><span>on</span><wbr></wbr><span>Package</span><wbr></wbr><span><span>Ready</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="337984612%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">override </span><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/on-package-ready.html"><span class="token function">onPackageReady</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">param<span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedModuleInterface.PackageReadyParam.html">XposedModuleInterface.PackageReadyParam</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1354229170%2FFunctions%2F635757565" anchor-label="onSystemServerStarting" id="-1354229170%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/on-system-server-starting.html"><span>on</span><wbr></wbr><span>System</span><wbr></wbr><span>Server</span><wbr></wbr><span><span>Starting</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1354229170%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><span class="token keyword">override </span><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/on-system-server-starting.html"><span class="token function">onSystemServerStarting</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">param<span class="token operator">: </span><a href="https://libxposed.github.io/api/io/github/libxposed/api/XposedModuleInterface.SystemServerStartingParam.html">XposedModuleInterface.SystemServerStartingParam</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-605508182%2FFunctions%2F635757565" anchor-label="openRemoteFile" id="-605508182%2FFunctions%2F635757565" data-filterable-set=":yukihook-runtime-libxposed/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-runtime-libxposed/release" data-filterable-set=":yukihook-runtime-libxposed/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-605508182%2FFunctions%2F635757565"><span>open</span><wbr></wbr><span>Remote</span><wbr></wbr><span><span>File</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-605508182%2FFunctions%2F635757565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-runtime-libxposed/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a></div></div><span class="token keyword">fun </span><a href="../../com.highcapable.yukihookapi.runtime.libxposed.entry.base/-lib-xposed-base-entry/index.html#-605508182%2FFunctions%2F635757565"><span class="token function">openRemoteFile</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a> </span>name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/os/ParcelFileDescriptor.html">ParcelFileDescriptor</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>YukiHook | Apache-2.0 License | Copyright (C) 2019 HighCapable</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

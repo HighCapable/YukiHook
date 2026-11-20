@@ -1,0 +1,14 @@
+$dokka.format:html-v1
+$dokka.linkExtension:html
+$dokka.location:com.highcapable.yukihookapi.hook.xposed.bridge.event////PointingToDeclaration/yukihook-runtime-xposed82/com.highcapable.yukihookapi.hook.xposed.bridge.event/index.html
+$dokka.location:com.highcapable.yukihookapi.hook.xposed.bridge.event//registerFrameworkEvents/com.highcapable.yukihookapi.hook.xposed.YukiHookXposedModule#kotlin.Function1[com.highcapable.yukihookapi.hook.xposed.bridge.event.YukiHookXposed82Event,kotlin.Unit]/PointingToDeclaration/yukihook-runtime-xposed82/com.highcapable.yukihookapi.hook.xposed.bridge.event/register-framework-events.html
+$dokka.location:com.highcapable.yukihookapi.hook.xposed.bridge.event/YukiHookXposed82Event///PointingToDeclaration/yukihook-runtime-xposed82/com.highcapable.yukihookapi.hook.xposed.bridge.event/-yuki-hook-xposed82-event/index.html
+$dokka.location:com.highcapable.yukihookapi.hook.xposed.bridge.event/YukiHookXposed82Event/onHandleLoadPackage/#kotlin.Function1[de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam,kotlin.Unit]/PointingToDeclaration/yukihook-runtime-xposed82/com.highcapable.yukihookapi.hook.xposed.bridge.event/-yuki-hook-xposed82-event/on-handle-load-package.html
+$dokka.location:com.highcapable.yukihookapi.hook.xposed.bridge.event/YukiHookXposed82Event/onInitZygote/#kotlin.Function1[de.robv.android.xposed.IXposedHookZygoteInit.StartupParam,kotlin.Unit]/PointingToDeclaration/yukihook-runtime-xposed82/com.highcapable.yukihookapi.hook.xposed.bridge.event/-yuki-hook-xposed82-event/on-init-zygote.html
+$dokka.location:com.highcapable.yukihookapi.runtime.xposed82.entry////PointingToDeclaration/yukihook-runtime-xposed82/com.highcapable.yukihookapi.runtime.xposed82.entry/index.html
+$dokka.location:com.highcapable.yukihookapi.runtime.xposed82.entry/Xposed82Entry///PointingToDeclaration/yukihook-runtime-xposed82/com.highcapable.yukihookapi.runtime.xposed82.entry/-xposed82-entry/index.html
+$dokka.location:com.highcapable.yukihookapi.runtime.xposed82.entry/Xposed82Entry/Xposed82Entry/#/PointingToDeclaration/yukihook-runtime-xposed82/com.highcapable.yukihookapi.runtime.xposed82.entry/-xposed82-entry/-xposed82-entry.html
+$dokka.location:com.highcapable.yukihookapi.runtime.xposed82.entry/Xposed82Entry/handleLoadPackage/#de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam/PointingToDeclaration/yukihook-runtime-xposed82/com.highcapable.yukihookapi.runtime.xposed82.entry/-xposed82-entry/handle-load-package.html
+$dokka.location:com.highcapable.yukihookapi.runtime.xposed82.entry/Xposed82Entry/initZygote/#de.robv.android.xposed.IXposedHookZygoteInit.StartupParam/PointingToDeclaration/yukihook-runtime-xposed82/com.highcapable.yukihookapi.runtime.xposed82.entry/-xposed82-entry/init-zygote.html
+com.highcapable.yukihookapi.hook.xposed.bridge.event
+com.highcapable.yukihookapi.runtime.xposed82.entry

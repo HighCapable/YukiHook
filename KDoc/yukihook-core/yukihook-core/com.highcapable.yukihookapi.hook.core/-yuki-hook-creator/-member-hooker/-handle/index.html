@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>Handle</title>
+    <link href="../../../../../images/logo-icon.svg" rel="icon" type="image/svg">
+        <script>var pathToRoot = "../../../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../../../styles/style.css" rel="Stylesheet">
+<link href="../../../../../styles/main.css" rel="Stylesheet">
+<link href="../../../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../../../index.html" tabindex="1">
+                    yukihook-core
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+1.5.1        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
+                        data-filter=":yukihook-core/release">release</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":yukihook-core/release"
+                                       data-filter=":yukihook-core/release"/>
+                                <span class="checkbox--icon"></span>
+                                release
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    yukihook-core
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="yukihook-core::com.highcapable.yukihookapi.hook.core/YukiHookCreator.MemberHooker.Handle///PointingToDeclaration//680522139">
+  <div class="breadcrumbs"><a href="../../../../../index.html">yukihook-core</a><span class="delimiter">/</span><a href="../../../index.html">com.highcapable.yukihookapi.hook.core</a><span class="delimiter">/</span><a href="../../index.html">YukiHookCreator</a><span class="delimiter">/</span><a href="../index.html">MemberHooker</a><span class="delimiter">/</span><span class="current">Handle</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Handle</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">inner </span><span class="token keyword">class </span><a href="index.html">Handle</a></div><p class="paragraph">Registration group handle and invocation failure listeners.</p><p class="paragraph">Listeners observe subsequent invocation failures only.</p><h4 class="tableheader">Inheritors</h4><div class="table"><div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../-chain-member-hooker/-handle/index.html">Handle</a></div></span></div><div></div></div></div><div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../-classic-member-hooker/-handle/index.html">Handle</a></div></span></div><div></div></div></div></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="1329462091%2FFunctions%2F680522139" anchor-label="by" id="1329462091%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="by.html"><span><span>by</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1329462091%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><a href="by.html"><span class="token function"><strike>by</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">condition<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">This function has no effect and does not evaluate <a href="by.html">condition</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1918995891%2FFunctions%2F680522139" anchor-label="ignoreCallbackFailure" id="1918995891%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="ignore-callback-failure.html"><span>ignore</span><wbr></wbr><span>Callback</span><wbr></wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1918995891%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="ignore-callback-failure.html"><span class="token function">ignoreCallbackFailure</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">Suppresses default callback failure logging without changing exception propagation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="707900779%2FFunctions%2F680522139" anchor-label="ignoredAllFailure" id="707900779%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="ignored-all-failure.html"><span>ignored</span><wbr></wbr><span>All</span><wbr></wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="707900779%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="ignored-all-failure.html"><span class="token function"><strike>ignoredAllFailure</strike></span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">Suppresses default invocation failure logging through <a href="ignore-invocation-failure.html">ignoreInvocationFailure</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-932502130%2FFunctions%2F680522139" anchor-label="ignoredConductFailure" id="-932502130%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="ignored-conduct-failure.html"><span>ignored</span><wbr></wbr><span>Conduct</span><wbr></wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-932502130%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="ignored-conduct-failure.html"><span class="token function"><strike>ignoredConductFailure</strike></span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">Suppresses default callback failure logging through <a href="ignore-callback-failure.html">ignoreCallbackFailure</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1628585001%2FFunctions%2F680522139" anchor-label="ignoredHookingFailure" id="1628585001%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="ignored-hooking-failure.html"><span>ignored</span><wbr></wbr><span>Hooking</span><wbr></wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1628585001%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="ignored-hooking-failure.html"><span class="token function"><strike>ignoredHookingFailure</strike></span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">This function has no effect and does not suppress registration failure logs.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-848007362%2FFunctions%2F680522139" anchor-label="ignoreInvocationFailure" id="-848007362%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="ignore-invocation-failure.html"><span>ignore</span><wbr></wbr><span>Invocation</span><wbr></wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-848007362%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="ignore-invocation-failure.html"><span class="token function">ignoreInvocationFailure</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">Suppresses default invocation failure logging without changing exception propagation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1580631274%2FFunctions%2F680522139" anchor-label="onAllFailure" id="-1580631274%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-all-failure.html"><span>on</span><wbr></wbr><span>All</span><wbr></wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1580631274%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="on-all-failure.html"><span class="token function"><strike>onAllFailure</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">Listens for invocation failures through <a href="on-invocation-failure.html">onInvocationFailure</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-278370444%2FFunctions%2F680522139" anchor-label="onCallbackFailure" id="-278370444%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-callback-failure.html"><span>on</span><wbr></wbr><span>Callback</span><wbr></wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-278370444%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="on-callback-failure.html"><span class="token function">onCallbackFailure</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><span class="token punctuation">(</span><a href="../index.html">I</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">Listens for hooker callback failures with the invocation context.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1688737885%2FFunctions%2F680522139" anchor-label="onConductFailure" id="-1688737885%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-conduct-failure.html"><span>on</span><wbr></wbr><span>Conduct</span><wbr></wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1688737885%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="on-conduct-failure.html"><span class="token function"><strike>onConductFailure</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><span class="token punctuation">(</span><a href="../index.html">I</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">Listens for hooker callback failures through <a href="on-callback-failure.html">onCallbackFailure</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1837860247%2FFunctions%2F680522139" anchor-label="onHooked" id="-1837860247%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-hooked.html"><span>on</span><wbr></wbr><span><span>Hooked</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1837860247%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="on-hooked.html"><span class="token function"><strike>onHooked</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://developer.android.com/reference/kotlin/java/lang/reflect/Member.html">Member</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">This function has no effect and does not invoke <a href="on-hooked.html">callback</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1546071252%2FFunctions%2F680522139" anchor-label="onHookingFailure" id="1546071252%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-hooking-failure.html"><span>on</span><wbr></wbr><span>Hooking</span><wbr></wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1546071252%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="on-hooking-failure.html"><span class="token function"><strike>onHookingFailure</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">This function has no effect and does not invoke <a href="on-hooking-failure.html">callback</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1070318187%2FFunctions%2F680522139" anchor-label="onInvocationFailure" id="-1070318187%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-invocation-failure.html"><span>on</span><wbr></wbr><span>Invocation</span><wbr></wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1070318187%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="on-invocation-failure.html"><span class="token function">onInvocationFailure</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">Listens for invocation failures without receiving the invocation context.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-116708510%2FFunctions%2F680522139" anchor-label="remove" id="-116708510%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="remove.html"><span><span>remove</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-116708510%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="remove.html"><span class="token function">remove</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Removes every registration belonging to this hooker.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1474161963%2FFunctions%2F680522139" anchor-label="result" id="1474161963%2FFunctions%2F680522139" data-filterable-set=":yukihook-core/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":yukihook-core/release" data-filterable-set=":yukihook-core/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="result.html"><span><span>result</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1474161963%2FFunctions%2F680522139"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":yukihook-core/release"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><a href="result.html"><span class="token function"><strike>result</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">block<span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">YukiHookCreator.MemberHooker.Handle</a></div><div class="brief "><p class="paragraph">Configures this handle through <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/index.html">apply</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>YukiHook | Apache-2.0 License | Copyright (C) 2019 HighCapable</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

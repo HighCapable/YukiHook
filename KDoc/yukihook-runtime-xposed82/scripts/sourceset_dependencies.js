@@ -1,0 +1,1 @@
+sourceset_dependencies='{":yukihook-runtime-xposed82/release":[]}'

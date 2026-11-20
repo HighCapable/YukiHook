@@ -1,0 +1,1 @@
+sourceset_dependencies='{":yukihook-extension-kavaref/release":[]}'
