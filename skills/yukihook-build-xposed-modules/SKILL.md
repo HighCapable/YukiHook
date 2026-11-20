@@ -1,9 +1,9 @@
 ---
-name: yukihook
+name: yukihook-build-xposed-modules
 description: Use YukiHook to build Android Xposed modules in Kotlin. Find documentation for integrating YukiHook into a module project, choosing a base module, writing hooks, using module features, and migrating from other frameworks or earlier YukiHook versions. This skill covers using YukiHook, not developing the YukiHook library itself.
 ---
 
-# Using YukiHook
+# Build Xposed Modules with YukiHook
 
 Use this skill when building modules with YukiHook. The [documentation website](https://highcapable.github.io/YukiHook/en) is available for browsing.
 

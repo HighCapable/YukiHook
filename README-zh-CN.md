@@ -92,12 +92,12 @@ object HookEntry : YukiHookXposedModule {
 
 ### Agent Skills
 
-使用 Claude Code、Codex 等智能体辅助开发时，可安装 [YukiHook 使用技能](skills/yukihook/SKILL.md)。
+使用 Claude Code、Codex 等智能体辅助开发时，可安装 [Build Xposed Modules with YukiHook](skills/yukihook-build-xposed-modules/SKILL.md)。
 
 > 示例如下
 
 ```bash
-npx skills add HighCapable/YukiHook --skill yukihook
+npx skills add HighCapable/YukiHook --skill yukihook-build-xposed-modules
 ```
 
 ## 探索新版本

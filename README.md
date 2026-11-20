@@ -95,12 +95,13 @@ Migrating from other Hook APIs? Please read [Migration to YukiHook](https://high
 
 ### Agent Skills
 
-For AI-assisted development with Claude Code, Codex, and other agents, install the [YukiHook skill](skills/yukihook/SKILL.md).
+For AI-assisted development with Claude Code, Codex, and other agents, install
+the [Build Xposed Modules with YukiHook](skills/yukihook-build-xposed-modules/SKILL.md).
 
 > The following example
 
 ```bash
-npx skills add HighCapable/YukiHook --skill yukihook
+npx skills add HighCapable/YukiHook --skill yukihook-build-xposed-modules
 ```
 
 ## Exploring New Version
