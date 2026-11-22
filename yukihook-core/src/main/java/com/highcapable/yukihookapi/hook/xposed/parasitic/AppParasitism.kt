@@ -714,7 +714,7 @@ internal object AppParasitism : ModuleReloadable {
                 ?.optional(silent = true)
                 ?.firstMethodOrNull { name = "getInstrumentation" }
                 ?.invoke<Instrumentation>() ?: error("Could not find Instrumentation in ActivityThread.")
-            val instrumentationResolver = instrumentation.asResolver().processor(resolver)
+            val instrumentationResolver = instrumentation.asResolver()
 
             val performLaunchActivity = ActivityThreadClass.resolve()
                 .processor(resolver)
@@ -791,8 +791,7 @@ internal object AppParasitism : ModuleReloadable {
                 override fun beforeHooked(param: ClassicHookerBridge.Param) {
                     val record = param.args[0] ?: return
 
-                    val intentResolver = record.asResolver().processor(resolver)
-                        .firstField { name = "intent" }
+                    val intentResolver = record.asResolver().firstField { name = "intent" }
                     val intent = intentResolver.get<Intent>() ?: return
                     intent.setExtrasClassLoader(currentApplication?.classLoader)
                     if (!intent.hasExtra(ActivityProxyConfig.proxyIntentName)) return
