@@ -58,6 +58,7 @@ import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.hook.core.api.handle.YukiHookHandle
 import com.highcapable.yukihookapi.hook.core.api.helper.YukiHookHelper
 import com.highcapable.yukihookapi.hook.core.internal.HiddenApiBypassResolver
+import com.highcapable.yukihookapi.hook.core.internal.utils.extension.forModuleReceiver
 import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.xposed.bridge.XposedModuleRuntime
 import com.highcapable.yukihookapi.hook.xposed.bridge.event.ModuleEventDispatcher
@@ -511,9 +512,11 @@ internal object AppParasitism : ModuleReloadable {
                 // for non-system broadcasts, so RECEIVER_NOT_EXPORTED must be passed explicitly here.
                 val flags = if (exported) null else ContextCompat.RECEIVER_NOT_EXPORTED
                 application.registerReceiver(filter, flags, exported) { context, intent ->
+                    // LoadedApk puts the module loader on the shared Intent before dispatch.
+                    intent.setExtrasClassLoader(context.classLoader)
                     events.dispatch {
                         // Follow the same failure policy as the other lifecycle callbacks of this registration.
-                        listOf(lifecycle).dispatchAppLifecycle { callback(context, intent) }?.let { throw it }
+                        listOf(lifecycle).dispatchAppLifecycle { callback(context, intent.forModuleReceiver()) }?.let { throw it }
                     }
                 }.also { synchronized(lifecycleReceivers) { lifecycleReceivers += application to it } }
             }

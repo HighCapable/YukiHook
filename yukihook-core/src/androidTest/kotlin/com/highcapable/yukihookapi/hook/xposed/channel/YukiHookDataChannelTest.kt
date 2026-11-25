@@ -26,8 +26,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.os.Binder
 import android.os.Bundle
+import android.os.IBinder
+import android.os.Parcel
 import android.os.ParcelFileDescriptor
+import android.os.Parcelable
 import android.os.SystemClock
 import android.view.LayoutInflater
 import android.view.View
@@ -97,6 +101,50 @@ class YukiHookDataChannelTest {
             } finally {
                 instrumentation.runOnMainSync { second.finish() }
             }
+        }
+    }
+
+    @Test
+    fun sendsASnapshotOfMutableSerializableData() {
+        val key = UUID.randomUUID().toString()
+        val payload = arrayListOf("sent")
+        val received = mutableListOf<List<String>>()
+
+        ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
+            scenario.onActivity { it.dataChannel(HOST).wait<List<String>>(key) { value -> received += value } }
+            val outgoing = captureBroadcast { it.dataChannel(HOST).put(key, payload) }
+            payload[0] = "changed after sending"
+
+            deliverBroadcast(outgoing)
+
+            Assert.assertEquals(listOf(listOf("sent")), received)
+        }
+    }
+
+    @Test
+    fun sendsASnapshotOfCustomParcelableDataWithABinder() {
+        val key = UUID.randomUUID().toString()
+        val binder = Binder()
+        val payload = TransportPayload("sent", binder)
+        val received = mutableListOf<String>()
+        val binders = mutableListOf<IBinder?>()
+
+        ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
+            scenario.onActivity {
+                it.dataChannel(HOST).wait<TransportPayload>(key) { value ->
+                    received += value.text
+                    binders += value.binder
+                    value.text = "changed by listener"
+                }
+            }
+            val outgoing = captureBroadcast { it.dataChannel(HOST).put(key, payload) }
+            payload.text = "changed after sending"
+
+            deliverBroadcast(outgoing)
+            deliverBroadcast(outgoing)
+
+            Assert.assertEquals(listOf("sent", "sent"), received)
+            Assert.assertEquals(listOf(binder, binder), binders)
         }
     }
 
@@ -236,6 +284,28 @@ class YukiHookDataChannelTest {
     }
 
     /**
+     * Mutable data whose Binder must survive the broadcast's Parcelable transport.
+     */
+    class TransportPayload(var text: String, val binder: IBinder?) : Parcelable {
+
+        companion object {
+
+            @JvmField
+            val CREATOR = object : Parcelable.Creator<TransportPayload> {
+                override fun createFromParcel(source: Parcel) = TransportPayload(checkNotNull(source.readString()), source.readStrongBinder())
+                override fun newArray(size: Int) = arrayOfNulls<TransportPayload>(size)
+            }
+        }
+
+        override fun describeContents() = 0
+
+        override fun writeToParcel(dest: Parcel, flags: Int) {
+            dest.writeString(text)
+            dest.writeStrongBinder(binder)
+        }
+    }
+
+    /**
      * A view-owning fragment that registers its listener each time the view is created.
      */
     class ListeningFragment : Fragment() {
@@ -282,22 +352,30 @@ class YukiHookDataChannelTest {
     private fun shell(command: String) = ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(command))
         .bufferedReader().use { it.readText() }
 
-    private fun broadcast(send: (Context) -> Unit) {
-        val delivered = CountDownLatch(1)
+    private fun captureBroadcast(send: (Context) -> Unit): Intent {
+        var outgoing: Intent? = null
         val sender = object : ContextWrapper(application) {
 
             override fun sendBroadcast(intent: Intent, receiverPermission: String?, options: Bundle?) {
-                val reply = Intent(intent).setAction("yuki_hook_module_data_channel_${application.packageName.hashCode()}")
-                    .setPackage(application.packageName)
-                // Keep the payload from put and route it back through Android's broadcast receiver.
-                application.sendOrderedBroadcast(reply, null, object : BroadcastReceiver() {
-                    override fun onReceive(context: Context?, intent: Intent?) {
-                        delivered.countDown()
-                    }
-                }, null, 0, null, null)
+                outgoing = Intent(intent)
             }
         }
         send(sender)
+        return checkNotNull(outgoing) { "The data channel did not send a broadcast" }
+    }
+
+    private fun deliverBroadcast(intent: Intent) {
+        val delivered = CountDownLatch(1)
+        val reply = Intent(intent).setAction("yuki_hook_module_data_channel_${application.packageName.hashCode()}")
+            .setPackage(application.packageName)
+        // Keep the payload from put and route it back through Android's broadcast receiver.
+        application.sendOrderedBroadcast(reply, null, object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                delivered.countDown()
+            }
+        }, null, 0, null, null)
         Assert.assertTrue("The data channel broadcast did not finish", delivered.await(5, TimeUnit.SECONDS))
     }
+
+    private fun broadcast(send: (Context) -> Unit) = deliverBroadcast(captureBroadcast(send))
 }

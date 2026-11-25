@@ -40,8 +40,10 @@ import com.highcapable.betterandroid.system.extension.component.BroadcastReceive
 import com.highcapable.betterandroid.system.extension.component.getParcelableCompat
 import com.highcapable.betterandroid.system.extension.component.registerReceiver
 import com.highcapable.betterandroid.system.extension.component.sendBroadcast
+import com.highcapable.kavaref.extension.classOf
 import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.hook.core.internal.utils.RandomString
+import com.highcapable.yukihookapi.hook.core.internal.utils.extension.parcelledCopy
 import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.log.data.YLogData
 import com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication
@@ -142,7 +144,9 @@ class YukiHookDataChannel private constructor() {
     private var handlerReceiver: BroadcastReceiver? = null
 
     /** The broadcast receiver callback. */
-    private val handlerReceiverCallback = BroadcastReceiver { _, intent ->
+    private val handlerReceiverCallback = BroadcastReceiver { context, intent ->
+        // LoadedApk puts the module loader on the shared Intent before dispatch.
+        intent.setExtrasClassLoader(context.classLoader)
         events.dispatch { intent.action?.let { channelLifecycle.dispatch(it, intent) } }
     }
 
@@ -506,7 +510,7 @@ class YukiHookDataChannel private constructor() {
          * @return [ChannelDataWrapper]<[T]> or null.
          */
         private fun <T> Intent.getDataWrapper(key: String) = runCatching {
-            extras?.apply { classLoader = ModuleClassLoader.get() }?.getParcelableCompat<ChannelDataWrapper<T>>(key + keyNonRepeatName)
+            extras?.parcelledCopy(ModuleClassLoader.get())?.getParcelableCompat<ChannelDataWrapper<T>>(key + keyNonRepeatName)
         }.getOrNull()
 
         /**
@@ -771,6 +775,10 @@ class YukiHookDataChannel private constructor() {
                 action = if (isHostEnvironment) moduleActionName() else hostActionName(packageName)
                 setPackage(if (isHostEnvironment) XposedModuleRuntime.modulePackageName else packageName)
                 putExtra(wrapper.instance.key + keyNonRepeatName, wrapper)
+
+                // Same-process AMS calls can keep the original extras in broadcast history.
+                // Leave the wrapper parceled there, and decode only the receiver's private copy.
+                replaceExtras(extras?.parcelledCopy(classOf<Intent>().classLoader))
             } ?: YLog.innerE("Failed to send broadcast for data key \"${wrapper.instance.key}\" because the context of \"$packageName\" is null")
         }
     }
