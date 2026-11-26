@@ -66,10 +66,8 @@ object HookEntry : YukiHookXposedModule {
                 // 在 Logcat 控制台过滤此 TAG 可找到详细日志
                 tag = "YukiHook-Demo"
                 // Log level, INFO by default
-                // DEBUG also enables detailed hook logs; the demo uses it to help check module activation
                 // Use INFO in release builds, or OFF to stop all new output and recording
                 // 日志级别 - 默认为 INFO
-                // DEBUG 同时启用详细的 Hook 日志 - Demo 使用它来方便检查模块是否激活
                 // 发布版本建议使用 INFO，OFF 会停止全部新的日志输出与记录
                 level = YLog.Level.DEBUG
                 // Whether to enable the logging function of debug log, not enabled by default
@@ -94,6 +92,13 @@ object HookEntry : YukiHookXposedModule {
                 // 可用的元素有：[TAG]、[PRIORITY]、[PROCESS_NAME]、[USER_ID]
                 elements(TAG, PRIORITY, PROCESS_NAME, USER_ID)
             }
+            // Whether to enable [YukiHook] debug mode, disabled by default
+            // The demo enables it with the DEBUG log level to help check module activation
+            // Disable it in release builds
+            // 是否启用 [YukiHook] 调试模式 - 默认不启用
+            // Demo 配合 DEBUG 日志级别启用，方便检查模块是否激活
+            // 发布版本请关闭此功能
+            debug = true
             // Whether to enable the [YukiHookDataChannel] function of the current Xposed module interacting with the host
             // Please make sure the Xposed module's [Application] extends [ModuleApplication] to be valid
             // This feature is enabled by default, when disabled it will not load [YukiHookDataChannel] when the feature is initialized
