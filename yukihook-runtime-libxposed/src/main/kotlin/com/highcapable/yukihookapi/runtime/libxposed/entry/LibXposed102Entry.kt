@@ -153,35 +153,44 @@ abstract class LibXposed102Entry : LibXposedBaseEntry() {
         pendingHandoff = param.savedInstanceState
         hasPendingHandoff = true
 
-        var restoreFailure: Throwable? = null
         runCatching {
-            attachRuntime(restoring = true)
-            parseProcessName(param)
-            val saved = HandoffState.decode(pendingHandoff)
-            initialized = YukiHookModuleCaller.callRestoreModule(::createHookEntry, moduleApplicationInfo, processName, saved.managedState) {
-                restoreFailure = it
-            }
-            if (!initialized) throw checkNotNull(restoreFailure) {
-                "Module restoration failed without a cause."
-            }
+            val restored = runCatching {
+                attachRuntime(restoring = true)
+                parseProcessName(param)
 
-            val nativeParam = object : XposedModuleInterface.HotReloadedParam by param {
-                override fun getSavedInstanceState() = saved.nativeState
-                override fun getOldHookHandles() = param.oldHookHandles.filterNot { it.id?.startsWith("${YukiHook.TAG}:") == true }
-            }
-            runCatching {
-                YukiHookLibXposedEvent.hotReloaded?.invoke(this, nativeParam)
-            }.onFailure(YukiHookModuleCaller::callRecordRestoreFailure)
+                val saved = HandoffState.decode(pendingHandoff)
+                var restoreFailure: Throwable? = null
+                initialized = YukiHookModuleCaller.callRestoreModule(
+                    ::createHookEntry,
+                    moduleApplicationInfo, processName, saved.managedState
+                ) { restoreFailure = it }
+                if (!initialized) throw checkNotNull(restoreFailure) {
+                    "Module restoration failed without a cause."
+                }
 
-            YukiHookModuleCaller.callFinishRestoreModule(param.extras)
-        }.also {
+                val frameworkParam = object : XposedModuleInterface.HotReloadedParam by param {
+                    override fun getSavedInstanceState() = saved.nativeState
+                    override fun getOldHookHandles() = param.oldHookHandles.filterNot { it.id?.startsWith("${YukiHook.TAG}:") == true }
+                }
+                runCatching {
+                    YukiHookLibXposedEvent.hotReloaded?.invoke(this, frameworkParam)
+                }.onFailure(YukiHookModuleCaller::callRecordRestoreFailure)
+            }
+            val failure = restored.exceptionOrNull()
+
             // Replaced handles are already invalidated. unhook is idempotent and removes only
             // old registrations, including declarations omitted from this module instance.
             param.oldHookHandles.forEach { handle ->
                 runCatching {
                     handle.unhook()
-                }.onFailure(YukiHookModuleCaller::callRecordRestoreFailure)
+                }.onFailure {
+                    if (failure != null) failure.addSuppressed(it)
+                    else YukiHookModuleCaller.callRecordRestoreFailure(it)
+                }
             }
+
+            restored.getOrThrow()
+            YukiHookModuleCaller.callFinishRestoreModule(param.extras)
         }.onFailure {
             initialized = false
             YukiHookModuleCaller.callAbortRestoreModule()
