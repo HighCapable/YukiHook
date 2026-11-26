@@ -676,7 +676,8 @@ internal object AppParasitism : ModuleReloadable {
 
             val proxyClassName = activityClass.declaredProxyClassName() ?: ActivityProxyConfig.proxyClassName
 
-            return Intent().apply {
+            return Intent(this).apply {
+                replaceExtras(Bundle())
                 setClassName(component.packageName, proxyClassName)
                 putExtra(ActivityProxyConfig.proxyIntentName, this@wrap)
             }
@@ -805,6 +806,29 @@ internal object AppParasitism : ModuleReloadable {
                     intentResolver.set(original)
                 }
             }).let(handles::add)
+            // Hook the `Intent` overloads after Android has preserved `ReferrerIntent`'s caller metadata.
+            Instrumentation::class.resolve().method {
+                name = "callActivityOnNewIntent"
+                parameters { types -> types.size >= 2 && types[0] == classOf<Activity>() && types[1] == classOf<Intent>() }
+            }.forEach { method ->
+                val newIntentResolver = instrumentationResolver.firstMethod {
+                    name = "callActivityOnNewIntent"
+                    parameters(*method.self.parameterTypes)
+                    superclass()
+                }
+                YukiHookHelper.hook(newIntentResolver, object : ClassicHookerBridge {
+                    override fun beforeHooked(param: ClassicHookerBridge.Param) {
+                        if (param.instance !== instrumentation || param.args[0] !is ModuleActivity) return
+
+                        val intent = param.args[1] as? Intent ?: return
+                        intent.setExtrasClassLoader(baseClassLoader)
+                        val original = intent.getParcelableExtraCompat<Intent>(ActivityProxyConfig.proxyIntentName) ?: return
+                        original.setExtrasClassLoader(baseClassLoader)
+
+                        param.args[1] = original
+                    }
+                }).let(handles::add)
+            }
             startActivityResolvers.forEach { resolver ->
                 YukiHookHelper.hook(resolver, object : ClassicHookerBridge {
                     override fun beforeHooked(param: ClassicHookerBridge.Param) {
