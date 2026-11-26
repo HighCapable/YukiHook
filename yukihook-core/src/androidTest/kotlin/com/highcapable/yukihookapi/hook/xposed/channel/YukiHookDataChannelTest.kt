@@ -26,6 +26,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Binder
 import android.os.Bundle
 import android.os.IBinder
@@ -36,6 +37,7 @@ import android.os.SystemClock
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
@@ -101,6 +103,35 @@ class YukiHookDataChannelTest {
             } finally {
                 instrumentation.runOnMainSync { second.finish() }
             }
+        }
+    }
+
+    @Test
+    fun moduleAnswersVersionRequestsFromAHostNamespace() {
+        val replies = ArrayBlockingQueue<Intent>(1)
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                intent?.let { replies.offer(Intent(it)) }
+            }
+        }
+        ContextCompat.registerReceiver(
+            application, receiver,
+            IntentFilter("yuki_hook_host_data_channel_${application.packageName.hashCode()}"),
+            ContextCompat.RECEIVER_EXPORTED
+        )
+        try {
+            var matched: Boolean? = null
+            val request = captureBroadcast { context ->
+                context.dataChannel(application.packageName).checkVersionMatch { matched = it }
+            }
+
+            deliverBroadcast(request)
+            val response = checkNotNull(replies.poll(5, TimeUnit.SECONDS)) { "The module did not answer the version request" }
+            deliverBroadcast(response)
+
+            Assert.assertEquals(true, matched)
+        } finally {
+            application.unregisterReceiver(receiver)
         }
     }
 

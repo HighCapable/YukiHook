@@ -194,6 +194,21 @@ class YukiHookDataChannel private constructor() {
 
             if (!isHost) {
                 application.registerActivityLifecycleCallbacks(channelLifecycle)
+                channelLifecycle.register(
+                    application, packageName, null,
+                    GET_MODULE_GENERATED_VERSION, ChannelLifecycle.Kind.VALUE
+                ) receive@{ action, intent ->
+                    if (action != moduleActionName(application)) return@receive
+
+                    // The host namespace is part of the request key, so decode it before choosing the reply namespace.
+                    val extras = intent.extras?.parcelledCopy(ModuleClassLoader.get()) ?: return@receive
+                    extras.keySet().filter { it.startsWith("${GET_MODULE_GENERATED_VERSION}_") }.forEach { key ->
+                        val request = runCatching { extras.getParcelableCompat<ChannelDataWrapper<*>>(key) }.getOrNull()
+                        val host = request?.instance?.value as? String ?: return@forEach
+                        if (request.instance.key == GET_MODULE_GENERATED_VERSION && key == "${GET_MODULE_GENERATED_VERSION}_${host.hashCode()}")
+                            namespace(application, host).put(RESULT_MODULE_GENERATED_VERSION, moduleGeneratedVersion)
+                    }
+                }
                 return
             }
 
