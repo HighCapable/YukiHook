@@ -37,12 +37,33 @@ class RuntimeRequirementDetectorTest : LintDetectorTest() {
             enum class YukiHookRuntime { LIBXPOSED, XPOSED_82 }
         """).indented()
 
+        private val moduleEntry = kotlin("""
+            package com.highcapable.yukihookapi.annotation.xposed
+            annotation class YukiHookLibXposedEntry(val minApiVersion: Int = 101, val targetApiVersion: Int)
+        """).indented()
+
+        private val libXposedEntry = kotlin("""
+            package com.highcapable.yukihookapi.runtime.libxposed.entry.base
+            class LibXposedBaseEntry
+        """).indented()
+
+        private val newApi = java("""
+            package test.api;
+            import com.highcapable.yukihookapi.annotation.internal.RequiresRuntime;
+            import com.highcapable.yukihookapi.runtime.YukiHookRuntime;
+            public class NewApi {
+                @RequiresRuntime(value = YukiHookRuntime.LIBXPOSED, apiVersion = 102)
+                public static String newApi() { return "new"; }
+            }
+        """).indented()
+
         private val requirement = kotlin("""
             package com.highcapable.yukihookapi.annotation.internal
 
             import com.highcapable.yukihookapi.runtime.YukiHookRuntime
 
-            annotation class RequiresRuntime(val value: YukiHookRuntime)
+            @Target(AnnotationTarget.CLASS, AnnotationTarget.FIELD, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.FUNCTION)
+            annotation class RequiresRuntime(val value: YukiHookRuntime, val apiVersion: Int = 0)
         """).indented()
 
         private val yukiHook = kotlin("""
@@ -56,13 +77,18 @@ class RuntimeRequirementDetectorTest : LintDetectorTest() {
                     val runtime get() = YukiHookRuntime.XPOSED_82
                     @get:RequiresRuntime(YukiHookRuntime.LIBXPOSED)
                     val sharedFiles get() = "files"
+                    @get:RequiresRuntime(YukiHookRuntime.LIBXPOSED, apiVersion = 102)
+                    val newApi get() = "new"
                 }
             }
         """).indented()
     }
 
     override fun getDetector() = RuntimeRequirementDetector()
-    override fun getIssues() = listOf(RuntimeRequirementDetector.REQUIRES_YUKIHOOK_RUNTIME_ISSUE)
+    override fun getIssues() = listOf(
+        RuntimeRequirementDetector.REQUIRES_YUKIHOOK_RUNTIME_ISSUE,
+        RuntimeRequirementDetector.NEW_XPOSED_API_ISSUE
+    )
 
     fun testRuntimeCheckInPropertyGetterGuardsSharedFiles() {
         lint().files(runtime, requirement, yukiHook, kotlin("""
@@ -105,5 +131,20 @@ class RuntimeRequirementDetectorTest : LintDetectorTest() {
         """).indented()).testModes(TestMode.DEFAULT).run()
             .expectErrorCount(1)
             .expectContains("sharedFiles requires the yukihook-runtime-libxposed runtime")
+    }
+
+    fun testNewXposedApiRequiresMinimumApiVersion102() {
+        lint().files(runtime, requirement, moduleEntry, libXposedEntry, newApi, kotlin("src/main/java/test/pkg/Entry.kt", """
+            package test.pkg
+            import com.highcapable.yukihookapi.annotation.xposed.YukiHookLibXposedEntry
+            import test.api.NewApi
+            @YukiHookLibXposedEntry(minApiVersion = 101, targetApiVersion = 102)
+            class Entry {
+                fun useNewApi() = NewApi.newApi()
+            }
+        """).indented()).testModes(TestMode.DEFAULT).run()
+            .expectContains("newApi requires Xposed API 102")
+            .expectContains("specifies minApiVersion = 101")
+            .expectWarningCount(1)
     }
 }
