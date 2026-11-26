@@ -42,6 +42,7 @@ import com.highcapable.yukihookapi.extension.kavaref.intercept
 import com.highcapable.yukihookapi.extension.kavaref.toClass
 import com.highcapable.yukihookapi.hook.factory.applyModuleTheme
 import com.highcapable.yukihookapi.hook.factory.registerModuleActivities
+import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.xposed.YukiHookXposedModule
 
 /**
@@ -70,24 +71,20 @@ object HookEntry : YukiHookXposedModule {
                 // 全局调试用的 TAG
                 // 在 Logcat 控制台过滤此 TAG 可找到详细日志
                 tag = "YukiHook-Demo"
-                // Whether to enable the output function of the debug log, enabled by default
-                // When closed, the API will stop output all logs, it is recommended not to disable this option arbitrarily
-                // Although it is incorrect to say that a lot of logs are written to the user's device, but NO LOG NO DEBUGGABLE
-                // Whether the log will affect the fluency of the device has always been a false proposition
-                // But if not has this option may cause some criticism, it is recommended not to close it
-                // 是否启用调试日志的输出功能 - 默认启用
-                // 一旦关闭后除手动日志外 API 将停止全部日志的输出 - 建议不要随意关掉这个选项
-                // 虽然说对用户的设备写入大量日志是不正确的 - 但是没有日志你将无法调试
-                // 关于日志是否会影响设备的流畅度一直是一个伪命题
-                // 但是不设置这个选项可能会引起一些非议 - 建议不要关闭就是了
-                enabled = true
+                // Log level, INFO by default
+                // DEBUG also enables detailed hook logs; the demo uses it to help check module activation
+                // Use INFO in release builds, or OFF to stop all new output and recording
+                // 日志级别 - 默认为 INFO
+                // DEBUG 同时启用详细的 Hook 日志 - Demo 使用它来方便检查模块是否激活
+                // 发布版本建议使用 INFO，OFF 会停止全部新的日志输出与记录
+                level = YLog.Level.DEBUG
                 // Whether to enable the logging function of debug log, not enabled by default
-                // When enabled, all available logs and exception stacks will be recorded in memory
+                // When enabled, logs that pass level and their exception stacks are recorded in memory
                 // Please note, excessive logging may slow down the host or cause frequent GCs
                 // After enabling, you can call [YukiHookLogger.saveToFile] to save the log to file in real-time
                 // Or use [YukiHookLogger.contents] to get the real-time log file contents
                 // 是否启用调试日志的记录功能 - 默认不启用
-                // 开启后将会在内存中记录全部可用的日志和异常堆栈
+                // 开启后将会在内存中记录通过日志级别过滤的日志和异常堆栈
                 // 请注意 - 过量的日志可能会导致宿主运行缓慢或造成频繁 GC
                 // 开启后你可以调用 [YukiHookLogger.saveToFile] 实时保存日志到文件或使用 [YukiHookLogger.contents] 获取实时日志文件
                 recording = false
@@ -103,15 +100,6 @@ object HookEntry : YukiHookXposedModule {
                 // 可用的元素有：[TAG]、[PRIORITY]、[PROCESS_NAME]、[USER_ID]
                 elements(TAG, PRIORITY, PROCESS_NAME, USER_ID)
             }
-            // Whether to enable debug mode, not enabled by default
-            // Note: Please selectively enable this feature, this can cause I/O performance issues caused by continuous output logs
-            // Please note, for a release build, be sure to turn off this function to prevent a lot of log stuffing on the user's device
-            // To facilitate testing whether the module is activated, the demo enables this function by default
-            // 是否启用调试模式 - 默认不启用
-            // 注意：请选择性启用此功能 - 这会导致持续输出日志造成的 I/O 性能问题
-            // 若作为发布版本请务必关闭此功能防止对用户设备造成大量日志填充
-            // 为方便测试模块是否激活 - Demo 默认启用此功能
-            debug = true
             // Whether to enable the [YukiHookDataChannel] function of the current Xposed module interacting with the host
             // Please make sure the Xposed module's [Application] extends [ModuleApplication] to be valid
             // This feature is enabled by default, when disabled it will not load [YukiHookDataChannel] when the feature is initialized
