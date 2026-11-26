@@ -60,10 +60,21 @@ class PackageParamDetector : Detector(), Detector.UastScanner {
         private const val LOADER_PARAMETER = "loader"
         private const val HOST_CLASS_LOADER = "hostClassLoader"
 
-        private val HOST_CLASS_LOADER_GETTERS = setOf("getHostClassLoader", "getAppClassLoader")
-        private val VARIOUS_CLASS_LOADING_FUNCTIONS = mapOf("load" to "toClass", "loadOrNull" to "toClassOrNull")
-        private val TO_CLASS_FUNCTIONS = setOf("toClass", "toClassOrNull")
-        private val LAZY_CLASS_FUNCTIONS = setOf("lazyClass", "lazyClassOrNull")
+        private const val GET_HOST_CLASS_LOADER_METHOD_NAME = "getHostClassLoader"
+        private const val GET_APP_CLASS_LOADER_METHOD_NAME = "getAppClassLoader"
+        private const val LOAD_METHOD_NAME = "load"
+        private const val LOAD_OR_NULL_METHOD_NAME = "loadOrNull"
+        private const val TO_CLASS_METHOD_NAME = "toClass"
+        private const val TO_CLASS_OR_NULL_METHOD_NAME = "toClassOrNull"
+        private const val LAZY_CLASS_METHOD_NAME = "lazyClass"
+        private const val LAZY_CLASS_OR_NULL_METHOD_NAME = "lazyClassOrNull"
+
+        private val HOST_CLASS_LOADER_GETTERS = setOf(GET_HOST_CLASS_LOADER_METHOD_NAME, GET_APP_CLASS_LOADER_METHOD_NAME)
+        private val VARIOUS_CLASS_LOADING_FUNCTIONS = mapOf(
+            LOAD_METHOD_NAME to TO_CLASS_METHOD_NAME, LOAD_OR_NULL_METHOD_NAME to TO_CLASS_OR_NULL_METHOD_NAME
+        )
+        private val TO_CLASS_FUNCTIONS = setOf(TO_CLASS_METHOD_NAME, TO_CLASS_OR_NULL_METHOD_NAME)
+        private val LAZY_CLASS_FUNCTIONS = setOf(LAZY_CLASS_METHOD_NAME, LAZY_CLASS_OR_NULL_METHOD_NAME)
 
         private val PACKAGE_PARAM_CLASS_ID = ClassId.topLevel(FqName(PACKAGE_PARAM_CLASS))
 

@@ -139,6 +139,7 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
         private const val REGISTER_MODULE_ACTIVITIES_METHOD_NAME = "registerModuleActivities"
         private const val REGISTER_APP_LIFECYCLE_METHOD_NAME = "registerAppLifecycle"
         private const val WITH_APPLICATION_READY_METHOD_NAME = "withApplicationReady"
+        private const val ON_APP_LIFECYCLE_METHOD_NAME = "onAppLifecycle"
 
         private const val KAVAREF_EXTENSION_PACKAGE_NAME = "${DeclaredSymbol.CORE_PACKAGE_NAME}.extension.kavaref"
 
@@ -1295,7 +1296,7 @@ class ModuleRuntimeDetector : Detector(), Detector.UastScanner {
             if (index != null) {
                 if (method.isDeferredEntryCallback()) return Execution.DEFERRED
                 if (method.isModuleRegistration() || method.isPackageParamMethod(REGISTER_APP_LIFECYCLE_METHOD_NAME) ||
-                    method.isPackageParamMethod("onAppLifecycle")) return Execution.IMMEDIATE
+                    method.isPackageParamMethod(ON_APP_LIFECYCLE_METHOD_NAME)) return Execution.IMMEDIATE
                 if (method.isPackageDeclaration() && method.parameterList.parameters[index].type.containsPackageParam()) return Execution.PACKAGE
             }
             return if (source.analyzeOrNull { isInlineArgument(source) } == true) Execution.IMMEDIATE else Execution.UNKNOWN

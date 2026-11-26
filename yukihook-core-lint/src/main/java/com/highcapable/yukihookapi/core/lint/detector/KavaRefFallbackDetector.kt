@@ -56,8 +56,17 @@ class KavaRefFallbackDetector : Detector(), Detector.UastScanner {
          */
         private const val EXTENSION_ISSUE_ID = "ClassLoadingWithoutHostClassLoader"
 
-        private val VARIOUS_CLASS_LOADING_FUNCTIONS = setOf("load", "loadOrNull")
-        private val CLASS_LOADING_FUNCTIONS = setOf("toClass", "toClassOrNull", "lazyClass", "lazyClassOrNull")
+        private const val LOAD_METHOD_NAME = "load"
+        private const val LOAD_OR_NULL_METHOD_NAME = "loadOrNull"
+        private const val TO_CLASS_METHOD_NAME = "toClass"
+        private const val TO_CLASS_OR_NULL_METHOD_NAME = "toClassOrNull"
+        private const val LAZY_CLASS_METHOD_NAME = "lazyClass"
+        private const val LAZY_CLASS_OR_NULL_METHOD_NAME = "lazyClassOrNull"
+
+        private val VARIOUS_CLASS_LOADING_FUNCTIONS = setOf(LOAD_METHOD_NAME, LOAD_OR_NULL_METHOD_NAME)
+        private val CLASS_LOADING_FUNCTIONS = setOf(
+            TO_CLASS_METHOD_NAME, TO_CLASS_OR_NULL_METHOD_NAME, LAZY_CLASS_METHOD_NAME, LAZY_CLASS_OR_NULL_METHOD_NAME
+        )
 
         private val PACKAGE_PARAM_CLASS_ID = ClassId.topLevel(FqName(PACKAGE_PARAM_CLASS))
 

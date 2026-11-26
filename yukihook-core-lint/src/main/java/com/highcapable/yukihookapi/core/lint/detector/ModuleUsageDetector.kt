@@ -111,6 +111,22 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
         private const val PACKAGE_PARAM = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.PackageParam"
         private const val KAVAREF_EXTENSION_PACKAGE = "${DeclaredSymbol.CORE_PACKAGE_NAME}.extension.kavaref"
 
+        private const val INSTANCE_METHOD_NAME = "instance"
+        private const val INSTANCE_OR_NULL_METHOD_NAME = "instanceOrNull"
+        private const val RESULT_METHOD_NAME = "result"
+        private const val ARG_METHOD_NAME = "arg"
+        private const val ARG_OR_NULL_METHOD_NAME = "argOrNull"
+        private const val FIRST_ARG_METHOD_NAME = "firstArg"
+        private const val FIRST_ARG_OR_NULL_METHOD_NAME = "firstArgOrNull"
+        private const val LAST_ARG_METHOD_NAME = "lastArg"
+        private const val LAST_ARG_OR_NULL_METHOD_NAME = "lastArgOrNull"
+        private const val PROCEED_METHOD_NAME = "proceed"
+        private const val PROCEED_WITH_METHOD_NAME = "proceedWith"
+        private const val GET_METHOD_NAME = "get"
+        private const val GET_OR_NULL_METHOD_NAME = "getOrNull"
+        private const val METHOD_PROPERTY_NAME = "method"
+        private const val CONSTRUCTOR_PROPERTY_NAME = "constructor"
+
         private const val INSTANCE_GETTER = "getInstance"
         private const val INSTANCE_OR_NULL_GETTER = "getInstanceOrNull"
         private const val MEMBER_GETTER = "getMember"
@@ -406,11 +422,11 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             val call = node.sourcePsi as? KtCallExpression ?: return
             when (call.calleeExpression?.text) {
                 "apply" -> checkHookApply(node, call)
-                "arg" -> {
+                ARG_METHOD_NAME -> {
                     checkHookParamArgumentPosition(node, call)
                     checkChainArgumentCall(node, call)
                 }
-                "argOrNull", "getOrNull", "firstOrNull", "lastOrNull" -> checkChainArgumentCall(node, call)
+                ARG_OR_NULL_METHOD_NAME, GET_OR_NULL_METHOD_NAME, "firstOrNull", "lastOrNull" -> checkChainArgumentCall(node, call)
                 else -> if (context.isEnabled(USE_APPLICATION_READY_ISSUE)) checkApplicationReady(call)
             }
         }
@@ -497,7 +513,7 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             else operand.argumentEditorRead(typeReference, isSafeCast)
             if (editor != null) {
                 if (isSafeCast && typeReference.analyzeOrNull { canReify(typeReference.type) } != true) return
-                val name = if (isSafeCast) "getOrNull" else "get"
+                val name = if (isSafeCast) GET_OR_NULL_METHOD_NAME else GET_METHOD_NAME
                 val type = (typeReference.typeElement as? KtNullableType)?.innerType ?: typeReference
                 val target = source.outermostParenthesizedExpression()
                 val call = "${editor.callPrefix}$name<${type.text}>()"
@@ -523,15 +539,15 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             // Casting the instance to Any is already redundant.
             if (!isResult && getter.name != MEMBER_GETTER && castType == CommonClassNames.JAVA_LANG_OBJECT) return
             val replacementName = when (getter.name) {
-                INSTANCE_GETTER if !isSafeCast -> "instance"
+                INSTANCE_GETTER if !isSafeCast -> INSTANCE_METHOD_NAME
                 // A non-null cast already throws when the instance is absent, the same as instance<T>().
-                INSTANCE_OR_NULL_GETTER if !isSafeCast && nullableType == null -> "instance"
-                INSTANCE_GETTER, INSTANCE_OR_NULL_GETTER -> "instanceOrNull"
+                INSTANCE_OR_NULL_GETTER if !isSafeCast && nullableType == null -> INSTANCE_METHOD_NAME
+                INSTANCE_GETTER, INSTANCE_OR_NULL_GETTER -> INSTANCE_OR_NULL_METHOD_NAME
                 MEMBER_GETTER if isSafeCast -> return
-                MEMBER_GETTER if castType == METHOD_CLASS -> "method"
-                MEMBER_GETTER if castType == STAR_CONSTRUCTOR_TYPE -> "constructor"
+                MEMBER_GETTER if castType == METHOD_CLASS -> METHOD_PROPERTY_NAME
+                MEMBER_GETTER if castType == STAR_CONSTRUCTOR_TYPE -> CONSTRUCTOR_PROPERTY_NAME
                 RESULT_GETTER if selector is KtNameReferenceExpression &&
-                    typeReference.analyzeOrNull { canReify(typeReference.type) } == true -> "result"
+                    typeReference.analyzeOrNull { canReify(typeReference.type) } == true -> RESULT_METHOD_NAME
                 else -> return
             }
             val replacementType = when {
@@ -612,7 +628,7 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
             if (property.symbol.callableId?.asSingleFqName()?.asString() != HOOK_CHAIN_ARGS) return null
             val shortcut = chainArgumentShortcut(index, property.dispatchReceiver, usesOrNull = false)
             return ChainInvocationCall(
-                shortcut ?: "arg", array.receiverPrefix(), if (shortcut == null) "(${index.text})" else "()",
+                shortcut ?: ARG_METHOD_NAME, array.receiverPrefix(), if (shortcut == null) "(${index.text})" else "()",
                 listOfNotNull(array, index.takeIf { shortcut == null })
             )
         }
@@ -624,12 +640,12 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
         val arguments = call.valueArgumentList ?: return null
         if (id.classId?.asSingleFqName()?.asString() == HOOK_CHAIN) {
             val usesOrNull = when (name) {
-                "arg", "firstArg", "lastArg", "proceed", "proceedWith" -> false
-                "argOrNull", "firstArgOrNull", "lastArgOrNull" -> true
+                ARG_METHOD_NAME, FIRST_ARG_METHOD_NAME, LAST_ARG_METHOD_NAME, PROCEED_METHOD_NAME, PROCEED_WITH_METHOD_NAME -> false
+                ARG_OR_NULL_METHOD_NAME, FIRST_ARG_OR_NULL_METHOD_NAME, LAST_ARG_OR_NULL_METHOD_NAME -> true
                 else -> return null
             }
             if (isCast && isSafeCast != usesOrNull) return null
-            val shortcut = if (name == "arg" || name == "argOrNull") {
+            val shortcut = if (name == ARG_METHOD_NAME || name == ARG_OR_NULL_METHOD_NAME) {
                 val index = call.valueArguments.singleOrNull()?.getArgumentExpression() ?: return null
                 chainArgumentShortcut(index, resolved.dispatchReceiver, usesOrNull)
             } else null
@@ -647,10 +663,10 @@ class ModuleUsageDetector : Detector(), Detector.UastScanner {
         val replacementName = when (id.asSingleFqName().asString()) {
             KOTLIN_GET_OR_NULL -> {
                 val index = call.valueArguments.singleOrNull()?.getArgumentExpression() ?: return null
-                chainArgumentShortcut(index, property.dispatchReceiver, usesOrNull = true) ?: "argOrNull"
+                chainArgumentShortcut(index, property.dispatchReceiver, usesOrNull = true) ?: ARG_OR_NULL_METHOD_NAME
             }
-            KOTLIN_FIRST_OR_NULL -> "firstArgOrNull".takeIf { call.valueArguments.isEmpty() } ?: return null
-            KOTLIN_LAST_OR_NULL -> "lastArgOrNull".takeIf { call.valueArguments.isEmpty() } ?: return null
+            KOTLIN_FIRST_OR_NULL -> FIRST_ARG_OR_NULL_METHOD_NAME.takeIf { call.valueArguments.isEmpty() } ?: return null
+            KOTLIN_LAST_OR_NULL -> LAST_ARG_OR_NULL_METHOD_NAME.takeIf { call.valueArguments.isEmpty() } ?: return null
             else -> return null
         }
         val keptArguments = arguments.takeIf { replacementName == "argOrNull" }

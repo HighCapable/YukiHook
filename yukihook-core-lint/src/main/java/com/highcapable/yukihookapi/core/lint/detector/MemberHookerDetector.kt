@@ -66,16 +66,28 @@ class MemberHookerDetector : Detector(), Detector.UastScanner {
 
         private const val BEFORE_METHOD_NAME = "before"
         private const val AFTER_METHOD_NAME = "after"
+        private const val INTERCEPT_METHOD_NAME = "intercept"
+        private const val REPLACE_ANY_METHOD_NAME = "replaceAny"
+        private const val REPLACE_UNIT_METHOD_NAME = "replaceUnit"
+        private const val REPLACE_TO_METHOD_NAME = "replaceTo"
+        private const val REPLACE_TO_TRUE_METHOD_NAME = "replaceToTrue"
+        private const val REPLACE_TO_FALSE_METHOD_NAME = "replaceToFalse"
+        private const val HOOK_METHOD_NAME = "hook"
+        private const val HOOK_ALL_METHOD_NAME = "hookAll"
+        private const val INTERCEPT_ALL_METHOD_NAME = "interceptAll"
 
-        private val INTERCEPT_METHOD_NAMES = setOf("intercept", "replaceAny", "replaceUnit", "replaceTo", "replaceToTrue", "replaceToFalse")
+        private val INTERCEPT_METHOD_NAMES = setOf(
+            INTERCEPT_METHOD_NAME, REPLACE_ANY_METHOD_NAME, REPLACE_UNIT_METHOD_NAME, REPLACE_TO_METHOD_NAME,
+            REPLACE_TO_TRUE_METHOD_NAME, REPLACE_TO_FALSE_METHOD_NAME
+        )
 
         private const val PACKAGE_PARAM_CLASS = "${DeclaredSymbol.CORE_PACKAGE_NAME}.hook.param.PackageParam"
         private const val MEMBER_CLASS = "java.lang.reflect.Member"
         private const val FIELD_CLASS = "java.lang.reflect.Field"
         private const val COLLECTION_CLASS = "java.util.Collection"
 
-        private val MEMBER_HOOK_METHOD_NAMES = setOf("hook", "intercept")
-        private val MEMBERS_HOOK_METHOD_NAMES = setOf("hookAll", "interceptAll")
+        private val MEMBER_HOOK_METHOD_NAMES = setOf(HOOK_METHOD_NAME, INTERCEPT_METHOD_NAME)
+        private val MEMBERS_HOOK_METHOD_NAMES = setOf(HOOK_ALL_METHOD_NAME, INTERCEPT_ALL_METHOD_NAME)
 
         private val COLLECTION_FACTORY_NAMES = setOf(
             "arrayOf", "listOf", "listOfNotNull", "mutableListOf", "arrayListOf",
@@ -246,9 +258,9 @@ class MemberHookerDetector : Detector(), Detector.UastScanner {
 
         private fun ULambdaExpression.isClassicScope(): Boolean {
             val call = enclosingCall() ?: return false
-            if (call.resolve()?.containingClass?.qualifiedName == CLASSIC_HOOKER) return false
-            return call.resolve()?.parameterList?.parameters?.any { it.type.containsClassicHooker() } == true ||
-                call.receiver?.getExpressionType().containsClassicHooker()
+            return call.resolve()?.containingClass?.qualifiedName != CLASSIC_HOOKER &&
+                (call.resolve()?.parameterList?.parameters?.any { it.type.containsClassicHooker() } == true ||
+                    call.receiver?.getExpressionType().containsClassicHooker())
         }
 
         private fun PsiType?.containsClassicHooker(): Boolean = when (this) {
