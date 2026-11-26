@@ -55,7 +55,7 @@ internal object ParcelCreatorCache : ModuleReloadable {
                 creators.keys.removeAll(::isOwnedLoader)
                 pairedCreators?.keys?.removeAll(::isOwnedLoader)
             }
-        }.onFailure { YLog.innerW("Failed to remove module class loaders from the Parcel creator cache", it) }
+        }.onFailure { YLog.warn("Failed to remove module class loaders from the Parcel creator cache", it) }
     }
 
     private fun creatorsOf(fieldName: String) = Parcel::class.resolve()

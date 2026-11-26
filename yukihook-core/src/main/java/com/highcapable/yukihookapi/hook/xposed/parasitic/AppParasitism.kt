@@ -351,7 +351,7 @@ internal object AppParasitism : ModuleReloadable {
                 installApplicationOnCreateHook()
                 if (!isApplicationOnCreateInstalled) {
                     pendingApplicationCallbacks -= callback
-                    YLog.innerE("An Application ready callback is dropped because the Application onCreate hook is unavailable")
+                    YLog.error("An Application ready callback is dropped because the Application onCreate hook is unavailable")
                 } else if (pendingHostBindings == null) {
                     currentApplication?.takeIf { it.packageName == lifecyclePackageName }?.let {
                         hostApplication = it
@@ -449,7 +449,7 @@ internal object AppParasitism : ModuleReloadable {
         }.onFailure {
             hooked.forEach { handle -> handle.remove() }
             events.reportFailure(it)
-            YLog.innerE("App lifecycle initialization failed", it)
+            YLog.error("App lifecycle initialization failed", it)
         }
     }
 
@@ -475,7 +475,7 @@ internal object AppParasitism : ModuleReloadable {
             isApplicationOnCreateInstalled = true
         }.onFailure {
             events.reportFailure(it)
-            YLog.innerE("Application onCreate initialization failed", it)
+            YLog.error("Application onCreate initialization failed", it)
         }
     }
 
@@ -550,7 +550,7 @@ internal object AppParasitism : ModuleReloadable {
         currentApplication
             ?.takeIf { it.packageName == lifecyclePackageName }
             ?.let(::initializeHostApplication)
-            ?.let { YLog.innerE("An exception occurred while dispatching an AppLifecycle event", e = it) }
+            ?.let { YLog.error("An exception occurred while dispatching an AppLifecycle event", e = it) }
     }
 
     /** Dispatches one lifecycle event without letting one registration interrupt the others. */
@@ -570,7 +570,7 @@ internal object AppParasitism : ModuleReloadable {
                 events.reportFailure(failure)
                 if (lifecycle.throwToHostOnFailure) {
                     if (failureToHost == null) failureToHost = failure
-                } else YLog.innerE("An exception occurred while dispatching an AppLifecycle event", e = failure)
+                } else YLog.error("An exception occurred while dispatching an AppLifecycle event", e = failure)
             }
         }
         return failureToHost
@@ -582,12 +582,12 @@ internal object AppParasitism : ModuleReloadable {
      */
     fun injectModuleResources(hostResources: Resources) {
         if (!XposedModuleRuntime.isHostEnvironment)
-            return YLog.innerW("Module resources can only be injected in the host environment")
+            return YLog.warn("Module resources can only be injected in the host environment")
         if (currentPackageName == XposedModuleRuntime.modulePackageName)
-            return YLog.innerE("Module resources cannot be injected into the module itself")
+            return YLog.error("Module resources cannot be injected into the module itself")
 
         ModuleResources.inject(hostResources, XposedModuleRuntime.moduleSourceDir) { throwable ->
-            throwable?.let { YLog.innerE("Failed to inject module resources into $hostResources", it) }
+            throwable?.let { YLog.error("Failed to inject module resources into $hostResources", it) }
         }
     }
 
@@ -613,7 +613,7 @@ internal object AppParasitism : ModuleReloadable {
         callbacks.forEach { callback ->
             runCatching { callback(application) }.onFailure {
                 events.reportFailure(it)
-                YLog.innerE("An exception occurred while running an Application ready callback", it)
+                YLog.error("An exception occurred while running an Application ready callback", it)
             }
         }
     }
@@ -625,15 +625,15 @@ internal object AppParasitism : ModuleReloadable {
      */
     private fun canRegisterModuleActivities(packageName: String): Boolean {
         if (!XposedModuleRuntime.isHostEnvironment) {
-            YLog.innerW("The Activity proxy can only be registered in the host environment")
+            YLog.warn("The Activity proxy can only be registered in the host environment")
             return false
         }
         if (packageName == XposedModuleRuntime.modulePackageName) {
-            YLog.innerE("The Activity proxy cannot be registered in the module itself")
+            YLog.error("The Activity proxy cannot be registered in the module itself")
             return false
         }
         if (AndroidVersion.isAtMost(AndroidVersion.M)) {
-            YLog.innerE("The Activity proxy requires Android 7.0 (API 24) or higher")
+            YLog.error("The Activity proxy requires Android 7.0 (API 24) or higher")
             return false
         }
 
@@ -655,14 +655,14 @@ internal object AppParasitism : ModuleReloadable {
 
         fun Class<*>.resolveDeclaredProxyClassName(): String? {
             val declared = runCatching { createInstanceAsType<ModuleActivity>().proxyClassName }.getOrElse {
-                YLog.innerW("Failed to read the proxy Activity declared by \"$name\", the default proxy is used instead", it)
+                YLog.warn("Failed to read the proxy Activity declared by \"$name\", the default proxy is used instead", it)
                 return null
             }.takeIf { it.isNotBlank() } ?: return null
 
             // The host [Application] may not be bound yet when activities are registered directly on a [Context].
             if ((hostApplication?.classLoader ?: context.classLoader).hasClass(declared)) return declared
 
-            YLog.innerW("The proxy Activity \"$declared\" declared by \"$name\" was not found in the host, the default proxy is used instead")
+            YLog.warn("The proxy Activity \"$declared\" declared by \"$name\" was not found in the host, the default proxy is used instead")
             return null
         }
 
@@ -819,7 +819,7 @@ internal object AppParasitism : ModuleReloadable {
             isActivityProxyRegistered = true
         }.onFailure {
             handles.forEach { handle -> handle.remove() }
-            YLog.innerE("Failed to initialize the Activity proxy", it)
+            YLog.error("Failed to initialize the Activity proxy", it)
             events.reportFailure(it)
         }
     }

@@ -210,7 +210,7 @@ class YukiHookDataChannel private constructor() {
         }.onFailure { failure ->
             if (!isHost) throw failure
             events.reportFailure(failure)
-            YLog.innerE("Data channel initialization failed", failure)
+            YLog.error("Data channel initialization failed", failure)
         }
     }
 
@@ -619,13 +619,13 @@ class YukiHookDataChannel private constructor() {
                         }
                     }
                     else -> {
-                        YLog.innerE("Unsupported type for segmented data key \"${wrapper.instance.key}\"")
+                        YLog.error("Unsupported type for segmented data key \"${wrapper.instance.key}\"")
                         null
                     }
                 }
             }.getOrElse {
                 segmentsTempData.remove(wrapper.wrapperId)
-                return YLog.innerE("YukiHookDataChannel cannot merge segmented data key \"${wrapper.instance.key}\"", it)
+                return YLog.error("YukiHookDataChannel cannot merge segmented data key \"${wrapper.instance.key}\"", it)
             }
 
             // Run the listener outside the merge, its own failure belongs to the listener.
@@ -666,17 +666,17 @@ class YukiHookDataChannel private constructor() {
             val wrapperId = RandomString.generate()
             // The size in bytes of the data to send.
             val dataByteSize = runCatching { wrapper.calDataByteSize() }.getOrElse {
-                YLog.innerE("YukiHookDataChannel cannot serialize data key \"${wrapper.instance.key}\" for sending", it)
+                YLog.error("YukiHookDataChannel cannot serialize data key \"${wrapper.instance.key}\" for sending", it)
                 return
             }
 
             /**
-             * Logs a warning when data is too large and [YLog.Config.level] is [YLog.Level.DEBUG].
+             * Logs a warning when data is too large and [YukiHook.Config.debug] is enabled.
              * @param name the data type name.
              * @param size the total number of segments.
              */
             fun logForTooLargeData(name: String, size: Int) {
-                if (YLog.Config.level == YLog.Level.DEBUG) YLog.innerW(
+                if (YukiHook.Config.debug) YLog.warn(
                     msg = "Data key \"${wrapper.instance.key}\" of type $name is too large (total ${dataByteSize / 1024f} KB, " +
                         "limit ${receiverDataMaxByteSize / 1024f} KB) and will be split into $size segments"
                 )
@@ -686,7 +686,7 @@ class YukiHookDataChannel private constructor() {
              * Logs an error when data is too large and cannot be segmented.
              * @param suggestionMessage the optional suggestion, empty by default.
              */
-            fun logForUnprocessableData(suggestionMessage: String = "") = YLog.innerE(
+            fun logForUnprocessableData(suggestionMessage: String = "") = YLog.error(
                 msg = "YukiHookDataChannel cannot send data key \"${wrapper.instance.key}\" of type ${wrapper.instance.value?.javaClass} " +
                     "because it is too large (total ${dataByteSize / 1024f} KB, " +
                     "limit ${receiverDataMaxByteSize / 1024f} KB) and cannot be segmented.\n" +
@@ -779,7 +779,7 @@ class YukiHookDataChannel private constructor() {
                 // Same-process AMS calls can keep the original extras in broadcast history.
                 // Leave the wrapper parceled there, and decode only the receiver's private copy.
                 replaceExtras(extras?.parcelledCopy(classOf<Intent>().classLoader))
-            } ?: YLog.innerE("Failed to send broadcast for data key \"${wrapper.instance.key}\" because the context of \"$packageName\" is null")
+            } ?: YLog.error("Failed to send broadcast for data key \"${wrapper.instance.key}\" because the context of \"$packageName\" is null")
         }
     }
 }

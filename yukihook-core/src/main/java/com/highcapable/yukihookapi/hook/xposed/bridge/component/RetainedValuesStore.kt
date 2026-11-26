@@ -145,7 +145,7 @@ internal class RetainedValuesStore : ModuleReloadable {
 
                 ModuleLifecycleManager.checkValue(value)
                 if (events.isManaged) when (typeSignature) {
-                    null -> YLog.innerW(
+                    null -> YLog.warn(
                         "Retained result key '$key' in scope '$scope' has no stable declared type \"$type\", " +
                             "the value will be computed again after module reload. " +
                             "Declare a named type instead of local, anonymous or generic types"

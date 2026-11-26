@@ -74,7 +74,7 @@ class ModuleResources private constructor(private val baseInstance: Resources) :
             assets.addAssetPath(path).getOrThrow()
             ModuleResources(resources)
         }.onFailure {
-            YLog.innerE("Failed to create module resources from $path", it)
+            YLog.error("Failed to create module resources from $path", it)
         }.getOrNull()
 
         /**

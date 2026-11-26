@@ -55,7 +55,7 @@ abstract class YukiBaseHooker : PackageParam() {
             if (boundContext != null &&
                 (boundContext.type != HookEntryType.ZYGOTE || targetContext.type == HookEntryType.ZYGOTE)
             ) {
-                YLog.innerW(
+                YLog.warn(
                     msg = "Hooker \"${this::class.java.name}\" is a singleton or reused instance already bound to hook entry " +
                         "\"${boundContext.id}\", but the current entry is \"${targetContext.id}\". " +
                         "Make sure the hooker supports multiple instances, the current hook entry will be ignored"
@@ -67,7 +67,7 @@ abstract class YukiBaseHooker : PackageParam() {
             runCatching { onHook() }.onFailure {
                 // Report it as a reload failure as well, the same as an exception from the encase block.
                 XposedModuleRuntime.recordRestoreFailure(it)
-                YLog.innerE("An exception occurred in $this", it)
+                YLog.error("An exception occurred in $this", it)
             }
         }
     }

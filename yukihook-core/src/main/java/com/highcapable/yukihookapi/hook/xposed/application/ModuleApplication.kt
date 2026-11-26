@@ -77,7 +77,7 @@ open class ModuleApplication : Application() {
         try {
             ModuleApplication_Impl.callHookEntryInit()
         } catch (e: NoClassDefFoundError) {
-            YLog.innerE("Failed to initialize the hook entry in the module process, the generated class maybe missing", e)
+            YLog.error("Failed to initialize the hook entry in the module process, the generated class maybe missing", e)
         }
         YukiHookDataChannel.get().register(this, isHost = false)
     }

@@ -103,7 +103,7 @@ class YukiHookPreferences private constructor(private var context: Context? = nu
         val packageName = XposedModuleRuntime.modulePackageName.ifBlank { context?.packageName ?: "" }
         if (runtime.isAvailable) return runtime.open(context, packageName, currentPreferenceName)
 
-        if (YLog.Config.level == YLog.Level.DEBUG) YLog.innerW(
+        if (YukiHook.Config.debug) YLog.warn(
             "Shared preferences \"$packageName/$currentPreferenceName\" are unavailable. Using temporary in-memory storage. " +
                 "Changes are not saved to disk or shared with other processes, are lost when this process ends, " +
                 "and will not be copied to shared storage when it becomes available."

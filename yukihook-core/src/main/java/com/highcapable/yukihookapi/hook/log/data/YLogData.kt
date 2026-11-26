@@ -52,9 +52,6 @@ data class YLogData internal constructor(
     var throwable: Throwable? = null
 ) : Serializable {
 
-    /** Whether the entry is printed implicitly. */
-    internal var isImplicit = false
-
     init {
         timestamp = System.currentTimeMillis()
         time = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.ROOT).format(Date(timestamp))
@@ -85,8 +82,8 @@ data class YLogData internal constructor(
         YLog.Config.elements.takeIf { it.isNotEmpty() }?.forEach {
             if (it == YLog.Config.TAG) content += "[$tag]"
             if (it == YLog.Config.PRIORITY) content += "[$priority]"
-            if (it == YLog.Config.PROCESS_NAME && !isImplicit && processName.isNotBlank()) content += "[$processName]"
-            if (it == YLog.Config.USER_ID && !isImplicit && userId != 0) content += "[$userId]"
+            if (it == YLog.Config.PROCESS_NAME && processName.isNotBlank()) content += "[$processName]"
+            if (it == YLog.Config.USER_ID && userId != 0) content += "[$userId]"
         }
 
         return content.takeIf { it.isNotBlank() }?.let { "$content $msg" } ?: msg

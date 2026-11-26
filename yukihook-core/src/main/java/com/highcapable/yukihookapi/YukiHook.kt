@@ -81,6 +81,14 @@ object YukiHook {
         inline fun logging(block: YLog.Config.() -> Unit) = YLog.Config.apply(block).let {}
 
         /**
+         * Whether [YukiHook] debug mode is enabled, false by default.
+         *
+         * Enables detailed hook logs and debug-only warnings, subject to [YLog.Config.level].
+         */
+        @set:JvmName("setDebugEnabled")
+        var debug = false
+
+        /**
          * Whether hook support for [SharedPreferences] is enabled.
          *
          * Once enabled, module startup forces [SharedPreferences] file permissions to [Context.MODE_WORLD_READABLE] (0664).
@@ -107,17 +115,7 @@ object YukiHook {
         // region Deprecated properties for backward compatibility
 
         /** Whether debug mode is enabled. */
-        @Deprecated(message = "Use YLog.Config.level instead.")
-        @set:JvmName("setDebugEnabled")
-        var debug
-            get() = YLog.Config.level == YLog.Level.DEBUG
-            set(value) {
-                YLog.Config.level = if (value) YLog.Level.DEBUG else YLog.Level.INFO
-            }
-
-        /** Whether debug mode is enabled. */
-        @Suppress("DEPRECATION")
-        @Deprecated(message = "Use YLog.Config.level instead.")
+        @Deprecated(message = "Use debug instead.", replaceWith = ReplaceWith("debug"))
         var isDebug
             get() = debug
             set(value) {
@@ -330,7 +328,7 @@ object YukiHook {
             XposedModuleRuntime.packageParamCallback = {
                 if (hookers.isNotEmpty())
                     hookers.forEach { loadHooker(it) }
-                else YLog.innerE("Failed to call \"encase\" because the hookers parameter is empty", isImplicit = true)
+                else YLog.error("Failed to call \"encase\" because the hookers parameter is empty")
             }
         else logNotFoundHookApiError()
     }
@@ -373,7 +371,7 @@ object YukiHook {
                     val context = PackageContext.from(baseContext)
                     val param = PackageParam(context)
                     context.declare { hooker.forEach { param.loadHooker(it) } }
-                } else YLog.innerE("Failed to call \"encase\" because the hookers parameter is empty", isImplicit = true)
+                } else YLog.error("Failed to call \"encase\" because the hookers parameter is empty")
         } else logNotFoundHookApiError()
     }
 
@@ -387,15 +385,14 @@ object YukiHook {
 
     /** Shows a welcome message when debug logging is enabled. */
     internal fun sayHello() {
-        if (YLog.Config.level != YLog.Level.DEBUG || !isSayHelloOnceTime) return
+        if (!Config.debug || !isSayHelloOnceTime) return
 
         isSayHelloOnceTime = false
-        YLog.innerD("Welcome to YukiHook $VERSION! Running on ${Status.Executor.name} API ${Status.Executor.apiVersion}", isImplicit = true)
+        YLog.debug("Welcome to YukiHook $VERSION! Running on ${Status.Executor.name} API ${Status.Executor.apiVersion}")
     }
 
     /** Logs an error when no hook API can be found. */
-    private fun logNotFoundHookApiError() = YLog.innerE(
-        "No available hook API was found in the current environment, aborting",
-        isImplicit = true
+    private fun logNotFoundHookApiError() = YLog.error(
+        "No available hook API was found in the current environment, aborting"
     )
 }

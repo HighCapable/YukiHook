@@ -98,7 +98,7 @@ object YLog {
         var tag = YukiHook.TAG
 
         /**
-         * Log level, [Level.INFO] by default.
+         * Minimum log level, [Level.INFO] by default.
          *
          * [Level.DEBUG] enables detailed hook logs. [Level.OFF] stops all output and recording.
          */
@@ -260,7 +260,7 @@ object YLog {
      * @param env the log environment, [EnvType.BOTH] by default.
      */
     fun debug(msg: Any? = null, e: Throwable? = null, tag: String = Config.tag, env: EnvType = EnvType.BOTH) =
-        log(Level.DEBUG, env, YLogData(priority = "D", tag = tag, msg = msg.toString(), throwable = e))
+        log(Level.DEBUG, env) { YLogData(priority = "D", tag = tag, msg = msg.toString(), throwable = e) }
 
     /**
      * Prints an info-level log.
@@ -272,7 +272,7 @@ object YLog {
      * @param env the log environment, [EnvType.BOTH] by default.
      */
     fun info(msg: Any? = null, e: Throwable? = null, tag: String = Config.tag, env: EnvType = EnvType.BOTH) =
-        log(Level.INFO, env, YLogData(priority = "I", tag = tag, msg = msg.toString(), throwable = e))
+        log(Level.INFO, env) { YLogData(priority = "I", tag = tag, msg = msg.toString(), throwable = e) }
 
     /**
      * Prints a warn-level log.
@@ -284,7 +284,7 @@ object YLog {
      * @param env the log environment, [EnvType.BOTH] by default.
      */
     fun warn(msg: Any? = null, e: Throwable? = null, tag: String = Config.tag, env: EnvType = EnvType.BOTH) =
-        log(Level.WARN, env, YLogData(priority = "W", tag = tag, msg = msg.toString(), throwable = e))
+        log(Level.WARN, env) { YLogData(priority = "W", tag = tag, msg = msg.toString(), throwable = e) }
 
     /**
      * Prints an error-level log.
@@ -296,76 +296,21 @@ object YLog {
      * @param env the log environment, [EnvType.BOTH] by default.
      */
     fun error(msg: Any? = null, e: Throwable? = null, tag: String = Config.tag, env: EnvType = EnvType.BOTH) =
-        log(Level.ERROR, env, YLogData(priority = "E", tag = tag, msg = msg.toString(), throwable = e))
-
-    /**
-     * Prints an internal debug-level [YukiHook] log.
-     * @param msg the log message, empty by default. Set only [e] to print just an exception stack trace.
-     * @param e the optional exception stack trace, printed in full automatically.
-     * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
-     */
-    internal fun innerD(msg: Any? = null, e: Throwable? = null, isImplicit: Boolean = false) {
-        if (Config.level != Level.DEBUG) return initKavaRefLoggerIfNot()
-        log(Level.DEBUG, EnvType.BOTH, YLogData(priority = "D", msg = msg.toString(), throwable = e), isImplicit)
-    }
-
-    /**
-     * Prints an internal debug-level [YukiHook] log, building [lazyMsg] only when it will be printed.
-     * @param e the optional exception stack trace, printed in full automatically.
-     * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
-     * @param lazyMsg builds the log message.
-     */
-    internal inline fun innerD(e: Throwable? = null, isImplicit: Boolean = false, lazyMsg: () -> Any?) {
-        if (Config.level == Level.DEBUG) innerD(lazyMsg(), e, isImplicit)
-    }
-
-    /**
-     * Prints an internal info-level [YukiHook] log.
-     * @param msg the log message, empty by default. Set only [e] to print just an exception stack trace.
-     * @param e the optional exception stack trace, printed in full automatically.
-     * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
-     */
-    internal fun innerI(msg: Any? = null, e: Throwable? = null, isImplicit: Boolean = false) {
-        if (Config.level == Level.OFF) return initKavaRefLoggerIfNot()
-        log(Level.INFO, EnvType.BOTH, YLogData(priority = "I", msg = msg.toString(), throwable = e), isImplicit)
-    }
-
-    /**
-     * Prints an internal warn-level [YukiHook] log.
-     * @param msg the log message, empty by default. Set only [e] to print just an exception stack trace.
-     * @param e the optional exception stack trace, printed in full automatically.
-     * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
-     */
-    internal fun innerW(msg: Any? = null, e: Throwable? = null, isImplicit: Boolean = false) {
-        if (Config.level == Level.OFF) return initKavaRefLoggerIfNot()
-        log(Level.WARN, EnvType.BOTH, YLogData(priority = "W", msg = msg.toString(), throwable = e), isImplicit)
-    }
-
-    /**
-     * Prints an internal error-level [YukiHook] log.
-     * @param msg the log message, empty by default. Set only [e] to print just an exception stack trace.
-     * @param e the optional exception stack trace, printed in full automatically.
-     * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
-     */
-    internal fun innerE(msg: Any? = null, e: Throwable? = null, isImplicit: Boolean = false) {
-        if (Config.level == Level.OFF) return initKavaRefLoggerIfNot()
-        log(Level.ERROR, EnvType.BOTH, YLogData(priority = "E", msg = msg.toString(), throwable = e), isImplicit)
-    }
+        log(Level.ERROR, env) { YLogData(priority = "E", tag = tag, msg = msg.toString(), throwable = e) }
 
     /**
      * Final implementation that prints logs to the console and the host environment.
      * @param level the log level.
      * @param env the log environment.
-     * @param data the log data.
-     * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
+     * @param data builds the log data after level filtering.
      */
-    private fun log(level: Level, env: EnvType, data: YLogData, isImplicit: Boolean = false) {
+    private fun log(level: Level, env: EnvType, data: () -> YLogData) {
         initKavaRefLoggerIfNot()
+        if (level.ordinal < Config.level.ordinal) return
 
+        val data = data()
         // Whether this is a valid log.
         val isNotBlankLog = data.msg.isNotBlank() || (data.msg.isBlank() && data.throwable != null)
-
-        if (level.ordinal < Config.level.ordinal) return
 
         /** Prints to [Log]. */
         fun logByLogd() = when (level) {
@@ -387,7 +332,7 @@ object YLog {
                     Level.OFF -> return
                 },
                 tag = data.tag,
-                msg = data.also { it.isImplicit = isImplicit }.toString(),
+                msg = data.toString(),
                 e = data.throwable
             )
         }
@@ -402,7 +347,7 @@ object YLog {
                 if (XposedModuleRuntime.isHostEnvironment) logByHooker()
             }
         }
-        if (!isImplicit && Config.recording && isNotBlankLog) inMemoryData.add(data)
+        if (Config.recording && isNotBlankLog) inMemoryData.add(data)
     }
 
     /** Defines the [KavaRef] logger. */

@@ -185,7 +185,7 @@ class YukiHookCreator private constructor() {
          */
         private fun removeRegistration(registration: YukiHookHandle) {
             registration.remove()
-            YLog.innerD("Removed hooker for ${registration.target}")
+            if (YukiHook.Config.debug) YLog.debug("Removed hooker for ${registration.target}")
         }
 
         /** Replaces each currently registered point with a new callback generation. */
@@ -243,12 +243,12 @@ class YukiHookCreator private constructor() {
             }
 
             if (onCallbackFailureCallback == null && onInvocationFailureCallback == null)
-                YLog.innerE("Hook callback failed for ${invocation.member}", throwable)
+                YLog.error("Hook callback failed for ${invocation.member}", throwable)
         }
 
-        private fun logHookerError(throwable: Throwable, target: Any) = YLog.innerE("Failed to hook $target", throwable)
+        private fun logHookerError(throwable: Throwable, target: Any) = YLog.error("Failed to hook $target", throwable)
 
-        private fun logListenerError(throwable: Throwable, invocation: I) = YLog.innerE(
+        private fun logListenerError(throwable: Throwable, invocation: I) = YLog.error(
             "Hook callback failure listener failed for ${invocation.member}", throwable
         )
 
@@ -450,7 +450,7 @@ class YukiHookCreator private constructor() {
                 val invocation = HookChain.from(dataExtraStorage, this@ChainMemberHooker, downstream)
 
                 runCatching {
-                    YLog.innerD { "Invoking intercept callback #${invocationCount.incrementAndGet()} for $target" }
+                    if (YukiHook.Config.debug) YLog.debug("Invoking intercept callback #${invocationCount.incrementAndGet()} for $target")
                     callback(invocation).also { checkReturnType(invocation, it) }
                 }.getOrElse { throwable ->
                     // Failures from the remaining chain or the original member belong to the caller, not to this callback.
@@ -684,10 +684,10 @@ class YukiHookCreator private constructor() {
 
                     runCatching {
                         val callback = if (isInterception) state.interceptHookCallback else state.beforeHookCallback
-                        if (callback != null) YLog.innerD {
+                        if (callback != null && YukiHook.Config.debug) YLog.debug(
                             "Invoking ${if (isInterception) "intercept" else "before"} callback " +
                                 "#${beforeInvocationCount.incrementAndGet()} for $target"
-                        }
+                        )
 
                         val value = callback?.invoke(invocation)
                         // An exception thrown to the host through `throwToHost` takes the place of the returned value.
@@ -720,7 +720,9 @@ class YukiHookCreator private constructor() {
                         runCatching {
                             val callback = state.afterHookCallback
                             if (callback != null) {
-                                YLog.innerD { "Invoking after callback #${afterInvocationCount.incrementAndGet()} for $target" }
+                                if (YukiHook.Config.debug) YLog.debug(
+                                    "Invoking after callback #${afterInvocationCount.incrementAndGet()} for $target"
+                                )
                                 callback(invocation)
                             }
                         }.onFailure {

@@ -337,7 +337,7 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
             if (context.isFirstApplication) AppParasitism.prepareHostApplication(context.packageName, context.type)
         }.onFailure {
             events.reportFailure(it)
-            YLog.innerE("An exception occurred in the hooking process of YukiHook", it)
+            YLog.error("An exception occurred in the hooking process of YukiHook", it)
         }
     }
 }

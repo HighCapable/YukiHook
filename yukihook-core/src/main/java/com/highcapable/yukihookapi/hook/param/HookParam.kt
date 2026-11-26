@@ -111,7 +111,7 @@ class HookParam private constructor(
      */
     fun Throwable.throwToHost() {
         param.throwable = this
-        YLog.innerE(message ?: "", this)
+        YLog.error(message ?: "", this)
     }
 
     /**

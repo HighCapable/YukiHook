@@ -134,7 +134,7 @@ internal class ChannelLifecycle(private val isHost: Boolean) : Application.Activ
                 }
             }.onFailure {
                 // One failing listener must not stop the others. Module listener failures must not crash the host.
-                if (isHost) YLog.innerE(
+                if (isHost) YLog.error(
                     "The module's data channel listener \"${key.name}\" for \"${key.packageName}\" " +
                         "failed to handle action \"$action\"", it
                 )

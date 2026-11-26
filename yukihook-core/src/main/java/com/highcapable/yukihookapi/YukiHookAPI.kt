@@ -196,18 +196,21 @@ object YukiHookAPI {
                 YLog.Config.tag = value
             }
 
-        @Deprecated(message = "Use YLog.Config.level instead.")
+        @Deprecated(
+            message = "Use YukiHook.Config.debug instead.",
+            replaceWith = ReplaceWith("YukiHook.Config.debug", "com.highcapable.yukihookapi.YukiHook")
+        )
         var isDebug
-            get() = YLog.Config.level == YLog.Level.DEBUG
+            get() = YukiHook.Config.debug
             set(value) {
-                YLog.Config.level = if (value) YLog.Level.DEBUG else YLog.Level.INFO
+                YukiHook.Config.debug = value
             }
 
         @Deprecated(message = "Use YLog.Config.level instead.")
         var isAllowPrintingLogs
-            get() = isDebug
+            get() = YLog.Config.enabled
             set(value) {
-                isDebug = value
+                YLog.Config.enabled = value
             }
 
         @Deprecated(message = "This property no longer has any effect.")

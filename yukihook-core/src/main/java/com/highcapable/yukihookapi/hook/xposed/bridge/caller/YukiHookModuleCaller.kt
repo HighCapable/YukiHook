@@ -85,7 +85,7 @@ object YukiHookModuleCaller {
         callOnInit(hookEntry)
 
         XposedModuleRuntime.loadEntryHooks(hookEntry)
-    }.onFailure { YLog.innerE("YukiHook failed to initialize the module", it) }.isSuccess
+    }.onFailure { YLog.error("YukiHook failed to initialize the module", it) }.isSuccess
 
     /**
      * Prepares the module's hook component before creating the user entry.
@@ -148,7 +148,7 @@ object YukiHookModuleCaller {
         XposedModuleRuntime.onRestoreComponents(appInfo, saved)
     }.onFailure {
         onFailure(it)
-        YLog.innerE("YukiHook failed to restore the module", it)
+        YLog.error("YukiHook failed to restore the module", it)
     }.isSuccess
 
     /**
