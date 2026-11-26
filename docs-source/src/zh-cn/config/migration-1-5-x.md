@@ -182,15 +182,21 @@ override fun onInit() {
 
 `YukiHookAPI.configs` 已被弃用，请迁移到 `YukiHook.configure`。
 
-| 旧版配置                          | 新版配置                |
-| --------------------------------- | ----------------------- |
-| `debugLog { ... }`                | `logging { ... }`       |
-| `isDebug`                         | `debug`                 |
-| `isEnableDataChannel`             | `dataChannel`           |
-| `isEnableHookSharedPreferences`   | `hookSharedPreferences` |
-| `isEnableModuleAppResourcesCache` | 已弃用，不再有任何作用  |
-| `YLog.Configs.isEnable`           | `YLog.Config.enabled`   |
-| `YLog.Configs.isRecord`           | `YLog.Config.recording` |
+| 旧版配置                                                  | 新版配置                |
+| --------------------------------------------------------- | ----------------------- |
+| `debugLog { ... }`                                        | `logging { ... }`       |
+| `isDebug`                                                 | `debug`                 |
+| `isEnableDataChannel`                                     | `dataChannel`           |
+| `isEnableHookSharedPreferences`                           | `hookSharedPreferences` |
+| `isEnableModuleAppResourcesCache`                         | 已弃用，不再有任何作用  |
+| `YLog.Configs.isEnable`、`enabled`、`isAllowPrintingLogs` | `YLog.Config.level`     |
+| `YLog.Configs.isRecord`                                   | `YLog.Config.recording` |
+
+`enabled`、`isEnable` 和 `isAllowPrintingLogs` 日志开关已弃用，请修改为 `logging` 中的 `level` 配置。
+
+`enabled = true` 对应 `level = YLog.Level.INFO`，`enabled = false` 对应 `level = YLog.Level.OFF`，其余同理。
+
+日志的默认级别为 `INFO`，`OFF` 会停止全部日志输出与记录，包括手动打印的日志，详情请参考 [调试日志](../library/yukihook-core/logger.md)。
 
 ## 移除的功能
 

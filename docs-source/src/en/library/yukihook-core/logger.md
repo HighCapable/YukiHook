@@ -22,11 +22,10 @@ override fun onInit() = configure {
     logging {
         // The TAG for global debugging, filter this TAG in the Logcat console to find detailed logs.
         tag = "YourModule"
-        // Whether to enable debug log output, enabled by default.
-        // When disabled, YukiHook stops all log output except logs printed manually.
-        enabled = true
+        // Minimum log level, INFO by default.
+        level = YLog.Level.DEBUG
         // Whether to enable debug log recording, disabled by default.
-        // When enabled, all available logs and exception stacks are recorded in memory.
+        // When enabled, logs that pass level and their exception stacks are recorded in memory.
         recording = false
         // Customize the elements displayed in debug logs.
         elements(TAG, PRIORITY, PROCESS_NAME, USER_ID)
@@ -34,7 +33,15 @@ override fun onInit() = configure {
 }
 ```
 
-When `enabled` is disabled, `YukiHook.Config.debug` is disabled as well.
+`level` sets the minimum level of logs to output and record. It defaults to `INFO`, with the following options.
+
+| Level   | Logs allowed                        |
+| ------- | ----------------------------------- |
+| `DEBUG` | `DEBUG`, `INFO`, `WARN` and `ERROR` |
+| `INFO`  | `INFO`, `WARN` and `ERROR`          |
+| `WARN`  | `WARN` and `ERROR`                  |
+| `ERROR` | `ERROR` only                        |
+| `OFF`   | No output or recording              |
 
 `elements` only applies to recorded logs and logs in the host environment. Log elements are displayed in the order you set, leave it empty to hide all elements except the log message.
 

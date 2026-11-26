@@ -71,7 +71,8 @@ override fun onInit() = configure {
     // Configure YLog.
     logging {
         tag = "YourModule"
-        enabled = true
+        // Minimum log level, INFO by default.
+        level = if (BuildConfig.DEBUG) YLog.Level.DEBUG else YLog.Level.INFO
         recording = false
     }
     // Whether to enable debug mode, disabled by default.

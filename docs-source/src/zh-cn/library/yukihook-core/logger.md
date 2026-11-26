@@ -21,11 +21,10 @@ override fun onInit() = configure {
     logging {
         // 全局调试用的 TAG，在 Logcat 控制台过滤此 TAG 可找到详细日志
         tag = "YourModule"
-        // 是否启用调试日志的输出功能，默认启用
-        // 关闭后除手动打印的日志外 YukiHook 将停止全部日志的输出
-        enabled = true
+        // 最小日志级别，默认为 INFO
+        level = YLog.Level.DEBUG
         // 是否启用调试日志的记录功能，默认不启用
-        // 开启后将会在内存中记录全部可用的日志和异常堆栈
+        // 开启后将会在内存中记录通过日志级别过滤的日志和异常堆栈
         recording = false
         // 自定义调试日志对外显示的元素
         elements(TAG, PRIORITY, PROCESS_NAME, USER_ID)
@@ -33,7 +32,15 @@ override fun onInit() = configure {
 }
 ```
 
-关闭 `enabled` 后，`YukiHook.Config.debug` 也将同时失效。
+`level` 用于设置日志输出与记录的最小级别，默认为 `INFO`，可选值如下。
+
+| 级别    | 允许的日志                         |
+| ------- | ---------------------------------- |
+| `DEBUG` | `DEBUG`、`INFO`、`WARN` 和 `ERROR` |
+| `INFO`  | `INFO`、`WARN` 和 `ERROR`          |
+| `WARN`  | `WARN` 和 `ERROR`                  |
+| `ERROR` | 仅 `ERROR`                         |
+| `OFF`   | 不输出或记录任何日志               |
 
 `elements` 只对记录的日志以及宿主环境中的日志生效，日志元素的排列将按照你设置的顺序进行显示，留空时将不显示除日志内容外的全部元素。
 

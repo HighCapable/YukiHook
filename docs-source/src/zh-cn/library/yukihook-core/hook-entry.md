@@ -69,7 +69,8 @@ override fun onInit() = configure {
     // 配置 YLog
     logging {
         tag = "YourModule"
-        enabled = true
+        // 最小日志级别，默认为 INFO
+        level = if (BuildConfig.DEBUG) YLog.Level.DEBUG else YLog.Level.INFO
         recording = false
     }
     // 是否启用调试模式，默认不启用

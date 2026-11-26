@@ -195,15 +195,21 @@ and [yukihook-runtime-libxposed → Framework Events](../library/yukihook-runtim
 
 `YukiHookAPI.configs` has been deprecated, please migrate to `YukiHook.configure`.
 
-| Old Config                        | New Config                           |
-| --------------------------------- | ------------------------------------ |
-| `debugLog { ... }`                | `logging { ... }`                    |
-| `isDebug`                         | `debug`                              |
-| `isEnableDataChannel`             | `dataChannel`                        |
-| `isEnableHookSharedPreferences`   | `hookSharedPreferences`              |
-| `isEnableModuleAppResourcesCache` | Deprecated, no longer has any effect |
-| `YLog.Configs.isEnable`           | `YLog.Config.enabled`                |
-| `YLog.Configs.isRecord`           | `YLog.Config.recording`              |
+| Old Config                                                | New Config                           |
+| --------------------------------------------------------- | ------------------------------------ |
+| `debugLog { ... }`                                        | `logging { ... }`                    |
+| `isDebug`                                                 | `debug`                              |
+| `isEnableDataChannel`                                     | `dataChannel`                        |
+| `isEnableHookSharedPreferences`                           | `hookSharedPreferences`              |
+| `isEnableModuleAppResourcesCache`                         | Deprecated, no longer has any effect |
+| `YLog.Configs.isEnable`, `enabled`, `isAllowPrintingLogs` | `YLog.Config.level`                  |
+| `YLog.Configs.isRecord`                                   | `YLog.Config.recording`              |
+
+The `enabled`, `isEnable` and `isAllowPrintingLogs` logging switches are deprecated. Please use the `level` configuration inside `logging` instead.
+
+`enabled = true` corresponds to `level = YLog.Level.INFO`, and `enabled = false` corresponds to `level = YLog.Level.OFF`. The same applies to the other switches.
+
+The default log level is `INFO`. `OFF` stops all log output and recording, including manually printed logs. For details, please refer to [Debug Logs](../library/yukihook-core/logger.md).
 
 ## Removed Features
 
