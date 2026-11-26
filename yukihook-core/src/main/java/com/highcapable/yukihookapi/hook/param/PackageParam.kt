@@ -668,7 +668,7 @@ open class PackageParam internal constructor(internal var context: PackageContex
      * @return [T]
      */
     @RequiresRuntime(YukiHookRuntime.LIBXPOSED)
-    fun <T : Any> Constructor<T>.newInstanceSpecial(subclass: Class<T>, vararg args: Any?) =
+    fun <T : Any> Constructor<*>.newInstanceSpecial(subclass: Class<T>, vararg args: Any?) =
         YukiHookHelper.newInstanceSpecial(this, subclass, args) as T
 
     /**

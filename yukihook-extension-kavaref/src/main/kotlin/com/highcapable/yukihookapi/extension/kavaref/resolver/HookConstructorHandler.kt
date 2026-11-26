@@ -54,7 +54,7 @@ internal sealed class HookConstructorHandler(protected val param: PackageParam) 
     class Special(param: PackageParam, private val subclass: Class<*>) : HookConstructorHandler(param) {
 
         override fun <T> newInstance(constructor: Constructor<T>, args: Array<out Any?>) = with(param) {
-            (constructor as Constructor<Any>).newInstanceSpecial(subclass as Class<Any>, *args) as T
+            constructor.newInstanceSpecial(subclass, *args) as T
         }
     }
 }
