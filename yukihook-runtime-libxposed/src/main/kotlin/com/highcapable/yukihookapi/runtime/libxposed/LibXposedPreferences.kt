@@ -50,7 +50,7 @@ internal object LibXposedPreferences {
         private var xposedApi: XposedInterface? = null
         private val preferences = mutableMapOf<String, SharedPreferences>()
 
-        override val isAvailable get() = use(false) { true }
+        override val isAvailable get() = runCatching { use(false) { true } }.getOrDefault(false)
 
         @Synchronized
         fun attach(api: XposedInterface) {

@@ -62,8 +62,8 @@ internal object LibXposedService {
     val frameworkName get() = runCatching { service?.frameworkName }.getOrNull() ?: "unknown"
     val frameworkVersion get() = runCatching { service?.frameworkVersion }.getOrNull() ?: "unknown"
     val frameworkVersionCode get() = runCatching { service?.frameworkVersionCode }.getOrNull() ?: -1L
-    val isPreferencesAvailable get() = usePreferences(false) { true }
-    val isRemoteFileAccessAvailable get() = useRemoteFiles(false) { true }
+    val isPreferencesAvailable get() = runCatching { usePreferences(false) { true } }.getOrDefault(false)
+    val isRemoteFileAccessAvailable get() = runCatching { useRemoteFiles(false) { true } }.getOrDefault(false)
 
     class HookedTarget(private val service: XposedService, val target: NativeHookedTarget) {
 
