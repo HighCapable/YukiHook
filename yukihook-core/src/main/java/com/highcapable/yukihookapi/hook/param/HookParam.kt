@@ -395,7 +395,7 @@ class HookParam private constructor(
      * Gets the argument-index helper for the currently hooked method or constructor.
      * @return [ArgsIndexCondition]
      */
-    @Suppress("DEPRECATION")
+    @Suppress("DEPRECATION", "DeprecatedCallableAddReplaceWith")
     @Deprecated(message = "Use firstArg or lastArg instead.")
     fun args() = ArgsIndexCondition()
 
@@ -438,6 +438,7 @@ class HookParam private constructor(
          * Gets the first argument of the currently hooked method or constructor.
          * @return [ArgumentEditor]
          */
+        @Suppress("DeprecatedCallableAddReplaceWith")
         @Deprecated(message = "Use firstArg instead.")
         fun first() = firstArg()
 
@@ -445,6 +446,7 @@ class HookParam private constructor(
          * Gets the last argument of the currently hooked method or constructor.
          * @return [ArgumentEditor]
          */
+        @Suppress("DeprecatedCallableAddReplaceWith")
         @Deprecated(message = "Use lastArg instead.")
         fun last() = lastArg()
     }

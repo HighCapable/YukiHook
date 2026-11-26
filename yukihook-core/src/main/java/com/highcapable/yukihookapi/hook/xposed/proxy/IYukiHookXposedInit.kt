@@ -41,12 +41,14 @@ import com.highcapable.yukihookapi.hook.xposed.YukiHookXposedModule
 )
 interface IYukiHookXposedInit : YukiHookXposedModule {
 
+    @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated(message = "Migrate to YukiHookXposedModule.onInit")
     override fun onInit() = Unit
 
     @Deprecated(message = "Migrate to YukiHookXposedModule.onHook")
     override fun onHook()
 
+    @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated(
         message = "This callback is no longer invoked and has no effect. " +
             "Use the runtime's registerFrameworkEvents { ... } extension in onInit instead."

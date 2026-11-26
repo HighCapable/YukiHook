@@ -231,6 +231,7 @@ fun Context.applyModuleTheme(@StyleRes theme: Int, configuration: Configuration?
  *
  * - Use [YukiHookXposedModule.configure] instead.
  */
+@Suppress("DeprecatedCallableAddReplaceWith")
 @Deprecated(message = "Use YukiHookXposedModule.configure instead.")
 inline fun IYukiHookXposedInit.configs(block: YukiHookAPI.Configs.() -> Unit) = YukiHookAPI.configs(block)
 
@@ -239,6 +240,7 @@ inline fun IYukiHookXposedInit.configs(block: YukiHookAPI.Configs.() -> Unit) = 
  *
  * - Use [YukiHookXposedModule.encase] instead.
  */
+@Suppress("DeprecatedCallableAddReplaceWith")
 @Deprecated(message = "Use YukiHookXposedModule.encase instead.")
 fun IYukiHookXposedInit.encase(block: PackageParam.() -> Unit) = YukiHook.encase(block)
 
@@ -247,6 +249,7 @@ fun IYukiHookXposedInit.encase(block: PackageParam.() -> Unit) = YukiHook.encase
  *
  * - Use [YukiHookXposedModule.encase] instead.
  */
+@Suppress("DeprecatedCallableAddReplaceWith")
 @Deprecated(message = "Use YukiHookXposedModule.encase instead.")
 fun IYukiHookXposedInit.encase(vararg hookers: YukiBaseHooker) = YukiHook.encase(hookers = hookers)
 
@@ -255,6 +258,7 @@ fun IYukiHookXposedInit.encase(vararg hookers: YukiBaseHooker) = YukiHook.encase
  *
  * - Use the selected runtime's `registerFrameworkEvents` extension from [YukiHookXposedModule.onInit] instead.
  */
+@Suppress("DeprecatedCallableAddReplaceWith")
 @Deprecated(message = "This API has no effect. Use the runtime's registerFrameworkEvents in onInit instead.")
 inline fun YukiHookXposedModule.events(block: YukiXposedEvent.() -> Unit) = Unit
 
@@ -263,6 +267,7 @@ inline fun YukiHookXposedModule.events(block: YukiXposedEvent.() -> Unit) = Unit
  *
  * - Use the selected runtime's `registerFrameworkEvents` extension from [IYukiHookXposedInit.onInit] instead.
  */
+@Suppress("DeprecatedCallableAddReplaceWith")
 @Deprecated(message = "This API has no effect. Use the runtime's registerFrameworkEvents in onInit instead.")
 inline fun IYukiHookXposedInit.events(block: YukiXposedEvent.() -> Unit) = Unit
 

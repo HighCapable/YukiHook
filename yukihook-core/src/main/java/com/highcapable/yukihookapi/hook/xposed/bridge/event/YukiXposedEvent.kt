@@ -36,6 +36,7 @@ object YukiXposedEvent {
      * Configures [YukiXposedEvent].
      * @param block the configuration block.
      */
+    @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated(message = "This API has no effect. Use the runtime's registerFrameworkEvents in onInit instead.")
     inline fun events(block: YukiXposedEvent.() -> Unit) = Unit
 
@@ -43,6 +44,7 @@ object YukiXposedEvent {
      * Sets the `initZygote` event listener.
      * @param callback the event callback.
      */
+    @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated(message = "This API has no effect. Use the runtime's registerFrameworkEvents in onInit instead.")
     fun onInitZygote(callback: (Any) -> Unit) = Unit
 
@@ -50,6 +52,7 @@ object YukiXposedEvent {
      * Sets the `handleLoadPackage` event listener.
      * @param callback the event callback.
      */
+    @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated(message = "This API has no effect. Use the runtime's registerFrameworkEvents in onInit instead.")
     fun onHandleLoadPackage(callback: (Any) -> Unit) = Unit
 
@@ -57,6 +60,7 @@ object YukiXposedEvent {
      * Sets the `handleInitPackageResources` event listener.
      * @param callback the event callback.
      */
+    @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated(message = "This API has no effect. Resource hooks are no longer supported.")
     fun onHandleInitPackageResources(callback: (Any) -> Unit) = Unit
 }

@@ -63,9 +63,7 @@ internal class PackageRegistration(private val callback: (PackageContext) -> Uni
      */
     fun record(context: PackageContext, retain: Boolean = events.isManaged): Boolean {
         // Legacy zygote events always run their callback.
-        if (context.type == HookEntryType.ZYGOTE) return true
-
-        return synchronized(loadedEntries) {
+        return context.type == HookEntryType.ZYGOTE || synchronized(loadedEntries) {
             val added = loadedEntries.add(context.id)
             if (retain) reloadPackages.getOrPut(context.id) { context }
             added

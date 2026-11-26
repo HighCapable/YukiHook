@@ -68,6 +68,7 @@ interface YukiHookXposedModule {
      *
      * - Move framework event registration to the selected runtime's `registerFrameworkEvents { ... }` extension inside [onInit].
      */
+    @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated(
         message = "This callback is no longer invoked and has no effect. " +
             "Use the runtime's registerFrameworkEvents { ... } extension in onInit instead."

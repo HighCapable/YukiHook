@@ -91,7 +91,7 @@ abstract class LibXposed102Entry : LibXposedBaseEntry() {
 
         override fun hashCode(): Int {
             var result = managedState.contentHashCode()
-            result = 31 * result + (nativeState?.hashCode() ?: 0)
+            result = 31 * result + nativeState.hashCode()
             return result
         }
     }

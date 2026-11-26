@@ -371,6 +371,7 @@ class YukiHookCreator private constructor() {
              * @param condition the unused condition block.
              * @return [Handle]
              */
+            @Suppress("DeprecatedCallableAddReplaceWith")
             @Deprecated(message = "This API has no effect. Check the condition before registering hooks instead.")
             inline fun by(condition: () -> Boolean) = this
 
@@ -381,6 +382,7 @@ class YukiHookCreator private constructor() {
              * @param callback the unused registration success listener.
              * @return [Handle]
              */
+            @Suppress("DeprecatedCallableAddReplaceWith")
             @Deprecated(message = "This API has no effect. Remove this call.")
             fun onHooked(callback: (Member) -> Unit) = this
 
@@ -391,6 +393,7 @@ class YukiHookCreator private constructor() {
              * @param callback the unused registration failure listener.
              * @return [Handle]
              */
+            @Suppress("DeprecatedCallableAddReplaceWith")
             @Deprecated(message = "This API has no effect. Remove this call.")
             fun onHookingFailure(callback: (Throwable) -> Unit) = this
 
@@ -400,6 +403,7 @@ class YukiHookCreator private constructor() {
              * - Remove this call.
              * @return [Handle]
              */
+            @Suppress("DeprecatedCallableAddReplaceWith")
             @Deprecated(message = "This API has no effect. Remove this call.")
             fun ignoredHookingFailure() = this
 
