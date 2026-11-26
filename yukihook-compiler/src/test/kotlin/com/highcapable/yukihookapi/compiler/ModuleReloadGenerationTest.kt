@@ -58,7 +58,8 @@ class ModuleReloadGenerationTest {
         val minApiVersion: Int = 101,
         val targetApiVersion: Int = 102,
         val hotReload: LibXposedGenerateSpec.HotReload = LibXposedGenerateSpec.HotReload.NONE,
-        val hasJavaEntry: Boolean = false
+        val hasJavaEntry: Boolean = false,
+        val nativeEntries: List<String> = emptyList()
     )
 
     @get:Rule
@@ -75,6 +76,37 @@ class ModuleReloadGenerationTest {
         Assert.assertTrue(manual.getValue("META-INF/xposed/module.prop").contains("autoHotReload=false"))
         Assert.assertTrue(automatic.getValue("META-INF/xposed/module.prop").contains("autoHotReload=true"))
         Assert.assertEquals("example.module.HookEntry_YukiHookXposedInit", automatic["META-INF/xposed/java_init.list"])
+    }
+
+    @Test
+    fun modernHotReloadIsDisabledAndVersionsAreIndependent() {
+        val api102 = generate(EntryConfig())
+        val api103 = generate(EntryConfig(targetApiVersion = 103))
+
+        Assert.assertTrue(api102.getValue("META-INF/xposed/module.prop").contains("minApiVersion=101"))
+        Assert.assertTrue(api102.getValue("META-INF/xposed/module.prop").contains("targetApiVersion=102"))
+        Assert.assertTrue(api102.getValue("META-INF/xposed/module.prop").contains("autoHotReload=false"))
+        Assert.assertTrue(api103.getValue("META-INF/xposed/module.prop").contains("targetApiVersion=103"))
+        Assert.assertTrue(api103.getValue("META-INF/xposed/module.prop").contains("minApiVersion=101"))
+    }
+
+    @Test
+    fun modernNativeEntriesTrackConfiguredFilesWithoutChangingOtherMetadata() {
+        val configured = generate(EntryConfig(nativeEntries = listOf("libexample.so", "libsecond.so")))
+        val omitted = generate(EntryConfig())
+
+        Assert.assertEquals("libexample.so\nlibsecond.so", configured["META-INF/xposed/native_init.list"])
+        Assert.assertEquals("example.module.HookEntry_YukiHookXposedInit", configured["META-INF/xposed/java_init.list"])
+        Assert.assertEquals(
+            setOf(
+                "META-INF/xposed/java_init.list", "META-INF/xposed/module.prop",
+                "META-INF/xposed/scope.list", "META-INF/xposed/native_init.list"
+            ),
+            configured.keys.filter { it.startsWith("META-INF/") }.toSet()
+        )
+        Assert.assertFalse("META-INF/xposed/native_init.list" in omitted)
+        Assert.assertEquals("", configured["META-INF/xposed/scope.list"])
+        Assert.assertEquals(omitted["META-INF/xposed/module.prop"], configured["META-INF/xposed/module.prop"])
     }
 
     @Test
@@ -146,7 +178,7 @@ class ModuleReloadGenerationTest {
             "staticScope" to false,
             "hotReload" to type(declaration("$HOT_RELOAD_CLASS.${value.hotReload.name}")),
             "javaEntries" to if (value.hasJavaEntry) listOf(type(nativeEntry)) else emptyList(),
-            "nativeEntries" to emptyList<String>()
+            "nativeEntries" to value.nativeEntries
         )
         val annotation = proxy<KSAnnotation> { name, _ ->
             when (name) {

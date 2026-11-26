@@ -82,7 +82,10 @@ class LegacyEntryGenerationTest {
     fun annotationCanBeMigratedBeforeTheInterface() {
         val (output, warnings) = generate(deprecatedAnnotation = false)
 
-        Assert.assertEquals("example.module.CompatEntry", output["assets/xposed_init"])
+        Assert.assertEquals(
+            mapOf("assets/xposed_init" to "example.module.CompatEntry"),
+            output.filterKeys { !it.endsWith(".kt") }
+        )
         Assert.assertTrue(warnings.any { "IYukiHookXposedInit" in it && "will be removed" in it })
         Assert.assertFalse(warnings.any { "InjectYukiHookWithXposed" in it })
     }
