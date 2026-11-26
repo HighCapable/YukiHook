@@ -99,10 +99,43 @@ class LegacyEntryGenerationTest {
         Assert.assertFalse(warnings.any { "IYukiHookXposedInit" in it })
     }
 
+    /** Checks nested singleton references in both generated initialization paths. */
+    @Test
+    fun nestedObjectEntryKeepsItsEnclosingTypeAndDefaultGeneratedName() {
+        val (output, _) = generate(
+            deprecatedAnnotation = false, deprecatedInterface = false,
+            nestedEntry = true, entryClassName = ""
+        )
+
+        Assert.assertEquals("example.module.HookEntry_YukiHookXposedInit", output["assets/xposed_init"])
+        Assert.assertTrue(output.getValue("example.module.HookEntry_YukiHookXposedInit.kt").contains("createHookEntry(): YukiHookXposedModule = Outer.HookEntry\n"))
+        Assert.assertTrue(output.getValue(
+            "com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication_Impl.kt"
+        ).contains("callOnInit(Outer.HookEntry)"))
+    }
+
+    /** Checks nested constructor references without changing an explicit framework entry name. */
+    @Test
+    fun nestedClassEntryKeepsItsEnclosingTypeAndCustomGeneratedName() {
+        val (output, _) = generate(
+            deprecatedAnnotation = false, deprecatedInterface = false,
+            nestedEntry = true, entryKind = ClassKind.CLASS
+        )
+
+        Assert.assertEquals("example.module.CompatEntry", output["assets/xposed_init"])
+        Assert.assertTrue(output.getValue("example.module.CompatEntry.kt").contains("createHookEntry(): YukiHookXposedModule = Outer.HookEntry()"))
+        Assert.assertTrue(output.getValue(
+            "com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication_Impl.kt"
+        ).contains("callOnInit(Outer.HookEntry())"))
+    }
+
     private fun generate(
         deprecatedAnnotation: Boolean = true,
         deprecatedInterface: Boolean = true,
-        generateModuleStatus: Boolean = true
+        generateModuleStatus: Boolean = true,
+        nestedEntry: Boolean = false,
+        entryKind: ClassKind = ClassKind.OBJECT,
+        entryClassName: String = "CompatEntry"
     ): Pair<Map<String, String>, List<String>> {
         val root = project.newFolder()
         File(root, "build.gradle.kts").writeText("")
@@ -126,7 +159,7 @@ class LegacyEntryGenerationTest {
         val annotationClass = declaration(annotationName)
         val arguments = buildMap {
             put("modulePackageName", "example.application")
-            put("entryClassName", "CompatEntry")
+            put("entryClassName", entryClassName)
             put(if (deprecatedAnnotation) "isUsingXposedModuleStatus" else "generateModuleStatus", generateModuleStatus)
             if (deprecatedAnnotation) {
                 put("sourcePath", "not/a/source/directory")
@@ -149,8 +182,10 @@ class LegacyEntryGenerationTest {
             }
         }
         val entry = declaration(
-            "example.module.HookEntry", sequenceOf(typeReference(entryInterface)),
-            annotations = sequenceOf(annotation), file = sourceFile
+            if (nestedEntry) "example.module.Outer.HookEntry" else "example.module.HookEntry",
+            sequenceOf(typeReference(entryInterface)), annotations = sequenceOf(annotation), file = sourceFile,
+            parent = if (nestedEntry) declaration("example.module.Outer") else null,
+            classKind = entryKind
         )
         val resolver = proxy<Resolver> { name, args ->
             when (name) {
@@ -193,19 +228,21 @@ class LegacyEntryGenerationTest {
         qualifiedName: String,
         supers: Sequence<KSTypeReference> = emptySequence(),
         annotations: Sequence<KSAnnotation> = emptySequence(),
-        file: KSFile? = null
+        file: KSFile? = null,
+        parent: KSClassDeclaration? = null,
+        classKind: ClassKind = ClassKind.OBJECT
     ) = proxy<KSClassDeclaration> { name, _ ->
         when (name) {
             "getSimpleName" -> ksName(qualifiedName.substringAfterLast('.'))
             "getQualifiedName" -> ksName(qualifiedName)
-            "getPackageName" -> ksName(qualifiedName.substringBeforeLast('.'))
-            "getParentDeclaration" -> null
+            "getPackageName" -> parent?.packageName ?: ksName(qualifiedName.substringBeforeLast('.'))
+            "getParentDeclaration" -> parent
             "getSuperTypes" -> supers
             "getAnnotations" -> annotations
             "getContainingFile" -> file
             "getLocation" -> file?.location
             "getPrimaryConstructor" -> null
-            "getClassKind" -> ClassKind.OBJECT
+            "getClassKind" -> classKind
             else -> error("Unexpected declaration request: $name")
         }
     }

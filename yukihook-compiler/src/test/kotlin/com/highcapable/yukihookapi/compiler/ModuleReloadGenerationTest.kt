@@ -59,7 +59,10 @@ class ModuleReloadGenerationTest {
         val targetApiVersion: Int = 102,
         val hotReload: LibXposedGenerateSpec.HotReload = LibXposedGenerateSpec.HotReload.NONE,
         val hasJavaEntry: Boolean = false,
-        val nativeEntries: List<String> = emptyList()
+        val nativeEntries: List<String> = emptyList(),
+        val nestedEntry: Boolean = false,
+        val entryKind: ClassKind = ClassKind.OBJECT,
+        val entryClassName: String = ""
     )
 
     @get:Rule
@@ -149,6 +152,32 @@ class ModuleReloadGenerationTest {
         )
     }
 
+    /** Checks nested constructor references in both generated initialization paths. */
+    @Test
+    fun nestedClassEntryKeepsItsEnclosingTypeAndDefaultGeneratedName() {
+        val output = generate(EntryConfig(nestedEntry = true, entryKind = ClassKind.CLASS))
+
+        Assert.assertEquals("example.module.HookEntry_YukiHookXposedInit", output["META-INF/xposed/java_init.list"])
+        val entrySource = output.getValue("example.module.HookEntry_YukiHookXposedInit.kt")
+        Assert.assertTrue(entrySource, entrySource.contains("createHookEntry(): YukiHookXposedModule = Outer.HookEntry()"))
+        Assert.assertTrue(output.getValue(
+            "com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication_Impl.kt"
+        ).contains("callOnInit(Outer.HookEntry())"))
+    }
+
+    /** Checks nested singleton references without changing an explicit framework entry name. */
+    @Test
+    fun nestedObjectEntryKeepsItsEnclosingTypeAndCustomGeneratedName() {
+        val output = generate(EntryConfig(nestedEntry = true, entryClassName = "CustomEntry"))
+
+        Assert.assertEquals("example.module.CustomEntry", output["META-INF/xposed/java_init.list"])
+        val entrySource = output.getValue("example.module.CustomEntry.kt")
+        Assert.assertTrue(entrySource, entrySource.contains("createHookEntry(): YukiHookXposedModule = Outer.HookEntry\n"))
+        Assert.assertTrue(output.getValue(
+            "com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication_Impl.kt"
+        ).contains("callOnInit(Outer.HookEntry)"))
+    }
+
     private fun generate(value: EntryConfig): Map<String, String> {
         val root = project.newFolder()
         File(root, "build.gradle.kts").writeText("")
@@ -171,7 +200,7 @@ class ModuleReloadGenerationTest {
         val nativeEntry = declaration("example.module.NativeEntry", sequenceOf(typeReference(nativeInterface)))
         val annotationClass = declaration(MODERN_ANNOTATION)
         val arguments = linkedMapOf(
-            "entryClassName" to "",
+            "entryClassName" to value.entryClassName,
             "minApiVersion" to value.minApiVersion,
             "targetApiVersion" to value.targetApiVersion,
             "scope" to emptyList<String>(),
@@ -197,8 +226,10 @@ class ModuleReloadGenerationTest {
             }
         }
         val entry = declaration(
-            "example.module.HookEntry", sequenceOf(typeReference(moduleInterface)),
-            annotations = sequenceOf(annotation), file = sourceFile
+            if (value.nestedEntry) "example.module.Outer.HookEntry" else "example.module.HookEntry",
+            sequenceOf(typeReference(moduleInterface)), annotations = sequenceOf(annotation), file = sourceFile,
+            parent = if (value.nestedEntry) declaration("example.module.Outer") else null,
+            classKind = value.entryKind
         )
         val resolver = proxy<Resolver> { name, args ->
             when (name) {
@@ -239,19 +270,21 @@ class ModuleReloadGenerationTest {
         qualifiedName: String,
         supers: Sequence<KSTypeReference> = emptySequence(),
         annotations: Sequence<KSAnnotation> = emptySequence(),
-        file: KSFile? = null
+        file: KSFile? = null,
+        parent: KSClassDeclaration? = null,
+        classKind: ClassKind = ClassKind.OBJECT
     ) = proxy<KSClassDeclaration> { name, _ ->
         when (name) {
             "getSimpleName" -> ksName(qualifiedName.substringAfterLast('.'))
             "getQualifiedName" -> ksName(qualifiedName)
-            "getPackageName" -> ksName(qualifiedName.substringBeforeLast('.'))
-            "getParentDeclaration" -> null
+            "getPackageName" -> parent?.packageName ?: ksName(qualifiedName.substringBeforeLast('.'))
+            "getParentDeclaration" -> parent
             "getSuperTypes" -> supers
             "getAnnotations" -> annotations
             "getContainingFile" -> file
             "getLocation" -> file?.location
             "getPrimaryConstructor" -> null
-            "getClassKind" -> ClassKind.OBJECT
+            "getClassKind" -> classKind
             else -> error("Unexpected declaration request: $name")
         }
     }
