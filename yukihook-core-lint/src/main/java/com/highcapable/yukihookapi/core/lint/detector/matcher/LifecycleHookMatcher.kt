@@ -280,8 +280,8 @@ internal class LifecycleHookMatcher(private val context: JavaContext, private va
             .map { it.fullExpression() }.firstOrNull { it.textRange.contains(hook.textRange) } ?: range
     }
 
-    private fun KtCallExpression.fullExpression() =
-        (parent as? KtQualifiedExpression)?.takeIf { it.selectorExpression == this } ?: this
+    private fun KtCallExpression.fullExpression(): KtExpression =
+        (this.parent as? KtQualifiedExpression)?.takeIf { it.selectorExpression == this } ?: this
 
     private fun classicRegistration(receiver: KaReceiverValue?): KtCallExpression? {
         receiver.expression()?.let { return it.origin().call() }
