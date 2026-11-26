@@ -72,7 +72,7 @@ class MemberHookerTest {
 
     private val hookers = mutableListOf<HookerBridge>()
     private val removed = mutableListOf<Member>()
-    private val previousEnabled = YLog.Config.enabled
+    private val previousLevel = YLog.Config.level
     private val registerHook = { target: HookPoint, _: Int, hooker: HookerBridge, _: String? ->
         val member = (target as HookPoint.Executable).value
         hookers += hooker
@@ -98,13 +98,13 @@ class MemberHookerTest {
 
     @Before
     fun installRuntime() {
-        YLog.Config.enabled = false
+        YLog.Config.level = YLog.Level.OFF
         YukiHookBridge.attach(YukiHookBridge.ApiSpec(hookRegistrationBridge = registrations(registerHook)))
     }
 
     @After
     fun restoreRuntime() {
-        YLog.Config.enabled = previousEnabled
+        YLog.Config.level = previousLevel
     }
 
     @Test

@@ -98,27 +98,21 @@ object YLog {
         var tag = YukiHook.TAG
 
         /**
-         * Whether debug log output is enabled, true by default.
+         * Log level, [Level.INFO] by default.
          *
-         * Disabling this stops all log output from [YukiHook].
-         * It does not affect logs printed manually through the following methods:
-         *
-         * [debug], [info], [warn], [error]
-         *
-         * Disabling [enabled] also disables [YukiHook.Config.debug].
+         * [Level.DEBUG] enables detailed hook logs. [Level.OFF] stops all output and recording.
          */
-        var enabled = true
+        var level = Level.INFO
             set(value) {
                 field = value
                 initKavaRefLoggerIfNot()
+                updateKavaRefLogLevel()
             }
 
         /**
          * Whether debug log recording is enabled, false by default.
          *
-         * Enabling this records all available logs and exception stack traces in memory.
-         *
-         * [enabled] must also be enabled.
+         * Enabling this records logs and exception stack traces allowed by [level] in memory.
          *
          * Excessive logging may slow down the host or cause frequent garbage collection.
          * Once enabled, call [saveToFile] to save logs to a file in real time or use [contents] to obtain the current log contents.
@@ -136,7 +130,16 @@ object YLog {
         const val PACKAGE_NAME = PROCESS_NAME
 
         /** Whether debug log output is enabled. */
-        @Deprecated(message = "Use enabled instead.", replaceWith = ReplaceWith("enabled"))
+        @Deprecated(message = "Use level instead.")
+        var enabled
+            get() = level != Level.OFF
+            set(value) {
+                level = if (value) Level.INFO else Level.OFF
+            }
+
+        /** Whether debug log output is enabled. */
+        @Suppress("DEPRECATION")
+        @Deprecated(message = "Use level instead.")
         var isEnable
             get() = enabled
             set(value) {
@@ -257,7 +260,7 @@ object YLog {
      * @param env the log environment, [EnvType.BOTH] by default.
      */
     fun debug(msg: Any? = null, e: Throwable? = null, tag: String = Config.tag, env: EnvType = EnvType.BOTH) =
-        log(env, YLogData(priority = "D", tag = tag, msg = msg.toString(), throwable = e))
+        log(Level.DEBUG, env, YLogData(priority = "D", tag = tag, msg = msg.toString(), throwable = e))
 
     /**
      * Prints an info-level log.
@@ -269,7 +272,7 @@ object YLog {
      * @param env the log environment, [EnvType.BOTH] by default.
      */
     fun info(msg: Any? = null, e: Throwable? = null, tag: String = Config.tag, env: EnvType = EnvType.BOTH) =
-        log(env, YLogData(priority = "I", tag = tag, msg = msg.toString(), throwable = e))
+        log(Level.INFO, env, YLogData(priority = "I", tag = tag, msg = msg.toString(), throwable = e))
 
     /**
      * Prints a warn-level log.
@@ -281,7 +284,7 @@ object YLog {
      * @param env the log environment, [EnvType.BOTH] by default.
      */
     fun warn(msg: Any? = null, e: Throwable? = null, tag: String = Config.tag, env: EnvType = EnvType.BOTH) =
-        log(env, YLogData(priority = "W", tag = tag, msg = msg.toString(), throwable = e))
+        log(Level.WARN, env, YLogData(priority = "W", tag = tag, msg = msg.toString(), throwable = e))
 
     /**
      * Prints an error-level log.
@@ -293,7 +296,7 @@ object YLog {
      * @param env the log environment, [EnvType.BOTH] by default.
      */
     fun error(msg: Any? = null, e: Throwable? = null, tag: String = Config.tag, env: EnvType = EnvType.BOTH) =
-        log(env, YLogData(priority = "E", tag = tag, msg = msg.toString(), throwable = e))
+        log(Level.ERROR, env, YLogData(priority = "E", tag = tag, msg = msg.toString(), throwable = e))
 
     /**
      * Prints an internal debug-level [YukiHook] log.
@@ -302,8 +305,8 @@ object YLog {
      * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
      */
     internal fun innerD(msg: Any? = null, e: Throwable? = null, isImplicit: Boolean = false) {
-        if (!Config.enabled || !YukiHook.Config.debug) return initKavaRefLoggerIfNot()
-        log(EnvType.BOTH, YLogData(priority = "D", msg = msg.toString(), throwable = e), isImplicit)
+        if (Config.level != Level.DEBUG) return initKavaRefLoggerIfNot()
+        log(Level.DEBUG, EnvType.BOTH, YLogData(priority = "D", msg = msg.toString(), throwable = e), isImplicit)
     }
 
     /**
@@ -313,7 +316,7 @@ object YLog {
      * @param lazyMsg builds the log message.
      */
     internal inline fun innerD(e: Throwable? = null, isImplicit: Boolean = false, lazyMsg: () -> Any?) {
-        if (Config.enabled && YukiHook.Config.debug) innerD(lazyMsg(), e, isImplicit)
+        if (Config.level == Level.DEBUG) innerD(lazyMsg(), e, isImplicit)
     }
 
     /**
@@ -323,8 +326,8 @@ object YLog {
      * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
      */
     internal fun innerI(msg: Any? = null, e: Throwable? = null, isImplicit: Boolean = false) {
-        if (!Config.enabled) return initKavaRefLoggerIfNot()
-        log(EnvType.BOTH, YLogData(priority = "I", msg = msg.toString(), throwable = e), isImplicit)
+        if (Config.level == Level.OFF) return initKavaRefLoggerIfNot()
+        log(Level.INFO, EnvType.BOTH, YLogData(priority = "I", msg = msg.toString(), throwable = e), isImplicit)
     }
 
     /**
@@ -334,8 +337,8 @@ object YLog {
      * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
      */
     internal fun innerW(msg: Any? = null, e: Throwable? = null, isImplicit: Boolean = false) {
-        if (!Config.enabled) return initKavaRefLoggerIfNot()
-        log(EnvType.BOTH, YLogData(priority = "W", msg = msg.toString(), throwable = e), isImplicit)
+        if (Config.level == Level.OFF) return initKavaRefLoggerIfNot()
+        log(Level.WARN, EnvType.BOTH, YLogData(priority = "W", msg = msg.toString(), throwable = e), isImplicit)
     }
 
     /**
@@ -345,44 +348,44 @@ object YLog {
      * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
      */
     internal fun innerE(msg: Any? = null, e: Throwable? = null, isImplicit: Boolean = false) {
-        if (!Config.enabled) return initKavaRefLoggerIfNot()
-        log(EnvType.BOTH, YLogData(priority = "E", msg = msg.toString(), throwable = e), isImplicit)
+        if (Config.level == Level.OFF) return initKavaRefLoggerIfNot()
+        log(Level.ERROR, EnvType.BOTH, YLogData(priority = "E", msg = msg.toString(), throwable = e), isImplicit)
     }
 
     /**
      * Final implementation that prints logs to the console and the host environment.
+     * @param level the log level.
      * @param env the log environment.
      * @param data the log data.
      * @param isImplicit whether to print implicitly without recording or displaying the package name and user ID.
      */
-    private fun log(env: EnvType, data: YLogData, isImplicit: Boolean = false) {
+    private fun log(level: Level, env: EnvType, data: YLogData, isImplicit: Boolean = false) {
         initKavaRefLoggerIfNot()
 
         // Whether this is a valid log.
         val isNotBlankLog = data.msg.isNotBlank() || (data.msg.isBlank() && data.throwable != null)
 
-        // Android-compatible log priority.
-        val priority = when (data.priority) {
-            "D" -> Log.DEBUG
-            "I" -> Log.INFO
-            "W" -> Log.WARN
-            "E" -> Log.ERROR
-            else -> Log.ASSERT
-        }
+        if (level.ordinal < Config.level.ordinal) return
 
         /** Prints to [Log]. */
-        fun logByLogd() = when (priority) {
-            Log.DEBUG -> Log.d(data.tag, data.msg, data.throwable)
-            Log.INFO -> Log.i(data.tag, data.msg, data.throwable)
-            Log.WARN -> Log.w(data.tag, data.msg, data.throwable)
-            Log.ERROR -> Log.e(data.tag, data.msg, data.throwable)
-            else -> Log.wtf(data.tag, data.msg, data.throwable)
+        fun logByLogd() = when (level) {
+            Level.DEBUG -> Log.d(data.tag, data.msg, data.throwable)
+            Level.INFO -> Log.i(data.tag, data.msg, data.throwable)
+            Level.WARN -> Log.w(data.tag, data.msg, data.throwable)
+            Level.ERROR -> Log.e(data.tag, data.msg, data.throwable)
+            Level.OFF -> Unit
         }
 
         /** Prints to the host environment. */
         fun logByHooker() {
             if (isNotBlankLog) YukiHookHelper.log(
-                priority = priority,
+                priority = when (level) {
+                    Level.DEBUG -> Log.DEBUG
+                    Level.INFO -> Log.INFO
+                    Level.WARN -> Log.WARN
+                    Level.ERROR -> Log.ERROR
+                    Level.OFF -> return
+                },
                 tag = data.tag,
                 msg = data.also { it.isImplicit = isImplicit }.toString(),
                 e = data.throwable
@@ -429,20 +432,43 @@ object YLog {
 
     /** Initializes the [KavaRef] logger on the first call only. */
     private fun initKavaRefLoggerIfNot() {
-        updateKavaRefLogLevel()
         if (isKavaRefLoggerInit) return
 
         KavaRef.setLogger(kavaRefLogger)
         isKavaRefLoggerInit = true
+        updateKavaRefLogLevel()
     }
 
     /** Updates the [KavaRef] logger level. */
     private fun updateKavaRefLogLevel() {
-        KavaRef.logLevel = when {
-            !Config.enabled -> KavaRefRuntime.LogLevel.OFF
-            YukiHook.Config.debug -> KavaRefRuntime.LogLevel.DEBUG
-            else -> KavaRefRuntime.LogLevel.INFO
+        KavaRef.logLevel = when (Config.level) {
+            Level.DEBUG -> KavaRefRuntime.LogLevel.DEBUG
+            Level.INFO -> KavaRefRuntime.LogLevel.INFO
+            Level.WARN -> KavaRefRuntime.LogLevel.WARN
+            Level.ERROR -> KavaRefRuntime.LogLevel.ERROR
+            Level.OFF -> KavaRefRuntime.LogLevel.OFF
         }
+    }
+
+    /**
+     * Log levels for [YukiHook].
+     * @param levelName the name of the log level.
+     */
+    enum class Level(val levelName: String) {
+        /** DEBUG */
+        DEBUG("debug"),
+
+        /** INFO */
+        INFO("info"),
+
+        /** WARN */
+        WARN("warn"),
+
+        /** ERROR */
+        ERROR("error"),
+
+        /** OFF (Turns off logging) */
+        OFF("off")
     }
 
     /**

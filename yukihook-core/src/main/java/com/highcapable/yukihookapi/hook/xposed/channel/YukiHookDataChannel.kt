@@ -671,12 +671,12 @@ class YukiHookDataChannel private constructor() {
             }
 
             /**
-             * Logs a warning when data is too large. This is effective only when [YukiHook.Config.debug] is enabled.
+             * Logs a warning when data is too large and [YLog.Config.level] is [YLog.Level.DEBUG].
              * @param name the data type name.
              * @param size the total number of segments.
              */
             fun logForTooLargeData(name: String, size: Int) {
-                if (YukiHook.Config.debug) YLog.innerW(
+                if (YLog.Config.level == YLog.Level.DEBUG) YLog.innerW(
                     msg = "Data key \"${wrapper.instance.key}\" of type $name is too large (total ${dataByteSize / 1024f} KB, " +
                         "limit ${receiverDataMaxByteSize / 1024f} KB) and will be split into $size segments"
                 )

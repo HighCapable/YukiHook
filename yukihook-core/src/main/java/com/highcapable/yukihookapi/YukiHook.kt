@@ -81,16 +81,6 @@ object YukiHook {
         inline fun logging(block: YLog.Config.() -> Unit) = YLog.Config.apply(block).let {}
 
         /**
-         * Whether debug mode is enabled, false by default.
-         *
-         * Once enabled, the log manager prints detailed hook logs to the console.
-         *
-         * Disabling [YLog.Config.enabled] also disables [debug].
-         */
-        @set:JvmName("setDebugEnabled")
-        var debug = false
-
-        /**
          * Whether hook support for [SharedPreferences] is enabled.
          *
          * Once enabled, module startup forces [SharedPreferences] file permissions to [Context.MODE_WORLD_READABLE] (0664).
@@ -117,7 +107,17 @@ object YukiHook {
         // region Deprecated properties for backward compatibility
 
         /** Whether debug mode is enabled. */
-        @Deprecated(message = "Use debug instead.", replaceWith = ReplaceWith("debug"))
+        @Deprecated(message = "Use YLog.Config.level instead.")
+        @set:JvmName("setDebugEnabled")
+        var debug
+            get() = YLog.Config.level == YLog.Level.DEBUG
+            set(value) {
+                YLog.Config.level = if (value) YLog.Level.DEBUG else YLog.Level.INFO
+            }
+
+        /** Whether debug mode is enabled. */
+        @Suppress("DEPRECATION")
+        @Deprecated(message = "Use YLog.Config.level instead.")
         var isDebug
             get() = debug
             set(value) {
@@ -385,9 +385,9 @@ object YukiHook {
 
     // endregion
 
-    /** Shows a welcome message when [Config.debug] is enabled. */
+    /** Shows a welcome message when debug logging is enabled. */
     internal fun sayHello() {
-        if (!Config.debug || !isSayHelloOnceTime) return
+        if (YLog.Config.level != YLog.Level.DEBUG || !isSayHelloOnceTime) return
 
         isSayHelloOnceTime = false
         YLog.innerD("Welcome to YukiHook $VERSION! Running on ${Status.Executor.name} API ${Status.Executor.apiVersion}", isImplicit = true)

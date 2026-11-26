@@ -19,7 +19,7 @@
  *
  * This file is created by fankes on 2022/2/2.
  */
-@file:Suppress("unused", "DEPRECATION")
+@file:Suppress("unused", "DEPRECATION", "DeprecatedCallableAddReplaceWith")
 
 package com.highcapable.yukihookapi
 
@@ -196,24 +196,18 @@ object YukiHookAPI {
                 YLog.Config.tag = value
             }
 
-        @Deprecated(
-            message = "Use YukiHook.Config.debug instead.",
-            replaceWith = ReplaceWith("YukiHook.Config.debug", "com.highcapable.yukihookapi.YukiHook")
-        )
+        @Deprecated(message = "Use YLog.Config.level instead.")
         var isDebug
-            get() = YukiHook.Config.debug
+            get() = YLog.Config.level == YLog.Level.DEBUG
             set(value) {
-                YukiHook.Config.debug = value
+                YLog.Config.level = if (value) YLog.Level.DEBUG else YLog.Level.INFO
             }
 
-        @Deprecated(
-            message = "Use YLog.Config.enabled instead.",
-            replaceWith = ReplaceWith("YLog.Config.enabled", "com.highcapable.yukihookapi.hook.log.YLog")
-        )
+        @Deprecated(message = "Use YLog.Config.level instead.")
         var isAllowPrintingLogs
-            get() = YLog.Config.enabled
+            get() = isDebug
             set(value) {
-                YLog.Config.enabled = value
+                isDebug = value
             }
 
         @Deprecated(message = "This property no longer has any effect.")

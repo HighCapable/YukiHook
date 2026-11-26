@@ -37,16 +37,16 @@ import org.junit.Test
  */
 class RuntimeIsolationTest {
 
-    private val previousEnabled = YLog.Config.enabled
+    private val previousLevel = YLog.Config.level
 
     @Before
     fun setUp() {
-        YLog.Config.enabled = false
+        YLog.Config.level = YLog.Level.OFF
     }
 
     @After
     fun tearDown() {
-        YLog.Config.enabled = previousEnabled
+        YLog.Config.level = previousLevel
     }
 
     private class StorageRequested : RuntimeException()
