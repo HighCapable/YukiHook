@@ -21,6 +21,8 @@
  */
 package com.highcapable.yukihookapi.compiler.subprocessor.spec
 
+import com.squareup.kotlinpoet.ClassName
+
 /**
  * Common generate specification interface.
  */
@@ -29,8 +31,8 @@ sealed interface GenerateSpec {
     /** The package name of the entry class. */
     var entryPackageName: String
 
-    /** The entry class name. */
-    var entryClassName: String
+    /** The entry class name, including enclosing declarations. */
+    var entryClassName: ClassName
 
     /** The generated framework entry class name. */
     var initClassName: String

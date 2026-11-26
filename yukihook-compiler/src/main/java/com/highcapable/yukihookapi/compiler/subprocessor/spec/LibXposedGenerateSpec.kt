@@ -22,6 +22,7 @@
 package com.highcapable.yukihookapi.compiler.subprocessor.spec
 
 import com.highcapable.yukihookapi.compiler.DeclaredSymbol
+import com.squareup.kotlinpoet.ClassName
 
 /**
  * Spec used to generate libxposed entry sources and metadata.
@@ -35,7 +36,7 @@ import com.highcapable.yukihookapi.compiler.DeclaredSymbol
  */
 data class LibXposedGenerateSpec(
     override var entryPackageName: String = "",
-    override var entryClassName: String = "",
+    override var entryClassName: ClassName,
     override var initClassName: String = "",
     override var isObjectEntry: Boolean = false,
     var minApiVersion: Int = RUNTIME_MIN_API_VERSION,

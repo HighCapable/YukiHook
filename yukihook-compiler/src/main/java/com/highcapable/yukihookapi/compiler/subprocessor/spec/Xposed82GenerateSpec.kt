@@ -22,6 +22,7 @@
 package com.highcapable.yukihookapi.compiler.subprocessor.spec
 
 import com.highcapable.yukihookapi.compiler.DeclaredSymbol
+import com.squareup.kotlinpoet.ClassName
 
 /**
  * Spec used to generate legacy Xposed entry sources and assets.
@@ -30,7 +31,7 @@ import com.highcapable.yukihookapi.compiler.DeclaredSymbol
  */
 data class Xposed82GenerateSpec(
     override var entryPackageName: String = "",
-    override var entryClassName: String = "",
+    override var entryClassName: ClassName,
     override var initClassName: String = "",
     override var isObjectEntry: Boolean = false,
     var modulePackageName: String = "",

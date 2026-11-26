@@ -154,6 +154,7 @@ class YukiHookXposedGenerator(environment: SymbolProcessorEnvironment) : BaseSym
         }
         val arguments = annotation.arguments.associate { it.name?.asString() to it.value }
         val spec = if (hasLibXposedRuntime) LibXposedGenerateSpec(
+            entryClassName = entry.toClassName(),
             minApiVersion = arguments["minApiVersion"] as? Int ?: LibXposedGenerateSpec.RUNTIME_MIN_API_VERSION,
             targetApiVersion = arguments["targetApiVersion"] as? Int ?: problem("The libxposed entry must declare targetApiVersion."),
             scope = (arguments["scope"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
@@ -161,6 +162,7 @@ class YukiHookXposedGenerator(environment: SymbolProcessorEnvironment) : BaseSym
             hotReload = resolveHotReload(arguments["hotReload"]),
             nativeEntries = (arguments["nativeEntries"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
         ) else Xposed82GenerateSpec(
+            entryClassName = entry.toClassName(),
             modulePackageName = (arguments["modulePackageName"] as? String).orEmpty().trim(),
             generateModuleStatus = arguments["generateModuleStatus"] as? Boolean ?: arguments["isUsingXposedModuleStatus"] as? Boolean ?: true
         )
@@ -181,12 +183,11 @@ class YukiHookXposedGenerator(environment: SymbolProcessorEnvironment) : BaseSym
             problem("Duplicate hook entry class name \"${spec.initClassName}\"")
 
         spec.entryPackageName = entry.packageName.asString()
-        spec.entryClassName = entry.simpleName.asString()
-        spec.initClassName = spec.initClassName.ifBlank { "${spec.entryClassName}$XPOSED_CLASS_SHORT_NAME" }
+        spec.initClassName = spec.initClassName.ifBlank { "${spec.entryClassName.simpleName}$XPOSED_CLASS_SHORT_NAME" }
         spec.isObjectEntry = when (entry.classKind) {
             ClassKind.CLASS -> false
             ClassKind.OBJECT -> true
-            else -> problem("Unsupported class kind `${entry.classKind}` for hook entry class \"${spec.entryClassName}\"")
+            else -> problem("Unsupported class kind `${entry.classKind}` for hook entry class \"${spec.entryClassName.simpleName}\"")
         }
         if (spec is LibXposedGenerateSpec) spec.javaEntries = resolveLibXposedJavaEntries(arguments["javaEntries"], spec)
 
@@ -318,7 +319,7 @@ class YukiHookXposedGenerator(environment: SymbolProcessorEnvironment) : BaseSym
 
     private fun GenerateSpec.createEntryInstance() = CodeBlock.of(
         if (isObjectEntry) "%T" else "%T()",
-        ClassName(entryPackageName, entryClassName)
+        entryClassName
     )
 
     private fun FileSpec.Builder.addCopyrightFileComment() = addFileComment(
