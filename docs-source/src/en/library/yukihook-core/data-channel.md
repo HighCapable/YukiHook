@@ -270,10 +270,14 @@ You can also use `allowOversizedData` to remove the data size limit, do not use 
 
 ## Security Notes
 
-In the module environment, you can only receive data sent by <u>**the host with the given package name**</u> and only send data to <u>**the host with the given package name**</u>.
+YukiHook specifies the package names of the host and the module automatically to send data to the given app.
+
+On Android 14 and above, YukiHook verifies the identity of the broadcasting app. Hosts can only receive data from the module,
+and the module can only receive data from the host with the corresponding package name.
+Broadcasts with an unavailable or mismatched sender identity are ignored.
 
 ::: danger
 
-YukiHook specifies the package names of the host and the module automatically, so other apps cannot receive or intercept this data.
+Below Android 14, this identity check is not supported. Specifying the receiving package does not prevent other apps from sending forged data, do not perform sensitive operations or return sensitive data based only on data channel messages.
 
 :::
