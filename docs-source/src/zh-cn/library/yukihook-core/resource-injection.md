@@ -225,6 +225,16 @@ class MyHostActivity : BaseActivity() {
 }
 ```
 
+::: warning
+
+代理 `Activity` 的 `launchMode` 与任务栈配置仍以宿主的 `AndroidManifest.xml` 为准，我们建议选择 `launchMode` 为 `standard` 的 `Activity`。
+
+例如，模块中的 A、B 两个 `Activity` 使用了同一个代理，而代理的 `launchMode` 为 `singleTask`，先打开 A 再打开 B 时，系统可能只会将 A 带到前台，而不会创建 B，因为系统看到的是同一个代理 `Activity`。遇到这种情况，请为 A、B 指定不同的代理，或选择 `launchMode` 为 `standard` 的代理。
+
+已有的模块 `Activity` 收到 `onNewIntent` 时，YukiHook 会自动还原原始 `Intent`。
+
+:::
+
 ## 包装 Context
 
 有时候，我们需要使用 `MaterialAlertDialogBuilder` 来美化自己在宿主中的对话框，但是拿不到 AppCompat 主题就无法创建。

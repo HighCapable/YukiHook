@@ -230,6 +230,18 @@ class MyHostActivity : BaseActivity() {
 }
 ```
 
+::: warning
+
+The `launchMode` and task settings of the proxy `Activity` still follow the AndroidManifest.xml of the host, we recommend choosing an `Activity` with `launchMode` set to `standard`.
+
+For example, module activities A and B use the same proxy with `launchMode` set to `singleTask`.
+If you open A and then B, the system may only bring A to the foreground instead of creating B, because it sees the same proxy `Activity`.
+If this happens, specify different proxies for A and B, or choose a proxy with `launchMode` set to `standard`.
+
+When an existing module `Activity` receives `onNewIntent`, YukiHook automatically restores the original `Intent`.
+
+:::
+
 ## Wrap Context
 
 Sometimes we want to use `MaterialAlertDialogBuilder` to make our dialogs in the host look better, but it cannot be created without an AppCompat theme.
