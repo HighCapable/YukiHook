@@ -36,6 +36,17 @@ import com.highcapable.yukihookapi.runtime.bridge.session.ModuleReloadBridge
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 interface FrameworkHookBridge {
 
+    /**
+     * The legacy module hooks to install.
+     */
+    enum class LegacyModuleHook {
+        /** Generated module activation status. */
+        STATUS,
+
+        /** Module preference file permissions. */
+        SHARED_PREFERENCES
+    }
+
     /** The current runtime type. */
     val runtime: YukiHookRuntime
 
@@ -76,10 +87,11 @@ interface FrameworkHookBridge {
     fun initializeModuleServices()
 
     /**
-     * Installs the generated legacy module-status hooks when supported by the selected runtime.
-     * @param loader the class loader to use.
+     * Installs the selected legacy module hooks when supported by the selected runtime.
+     * @param hook the hooks to install.
+     * @param loader the module class loader.
      */
-    fun installLegacyModuleStatusHooks(loader: ClassLoader?)
+    fun installLegacyModuleHooks(hook: LegacyModuleHook, loader: ClassLoader?)
 
     /**
      * Observes service readiness and returns an independent subscription for the listener.

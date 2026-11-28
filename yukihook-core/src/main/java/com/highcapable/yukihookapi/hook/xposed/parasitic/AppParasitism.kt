@@ -30,7 +30,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.SharedPreferences
 import android.content.pm.ApplicationInfo
 import android.content.res.Configuration
 import android.content.res.Resources
@@ -69,8 +68,6 @@ import com.highcapable.yukihookapi.hook.xposed.bridge.type.HookEntryType
 import com.highcapable.yukihookapi.hook.xposed.channel.YukiHookDataChannel
 import com.highcapable.yukihookapi.hook.xposed.parasitic.activity.config.ActivityProxyConfig
 import com.highcapable.yukihookapi.hook.xposed.parasitic.activity.proxy.ModuleActivity
-import com.highcapable.yukihookapi.runtime.YukiHookBridge
-import com.highcapable.yukihookapi.runtime.YukiHookRuntime
 import com.highcapable.yukihookapi.runtime.bridge.hooker.ClassicHookerBridge
 import com.highcapable.yukihookapi.runtime.state.ModuleStateSpec
 import java.lang.ref.WeakReference
@@ -177,7 +174,6 @@ internal object AppParasitism : ModuleReloadable {
     private var lifecyclePackageName = ""
 
     private val ActivityThreadClass by lazyClass("android.app.ActivityThread")
-    private val ContextImplClass by lazyClass("android.app.ContextImpl")
 
     /**
      * Global lifecycle [Application] of the current host.
@@ -277,28 +273,6 @@ internal object AppParasitism : ModuleReloadable {
      * @return [Int]
      */
     val currentUserId get() = Process.myUid() / PER_USER_RANGE
-
-    /**
-     * Hooks legacy module activation status and [SharedPreferences].
-     * @param loader the module [ClassLoader].
-     */
-    fun hookLegacyModuleRelated(loader: ClassLoader?) {
-        if (YukiHookBridge.runtime != YukiHookRuntime.XPOSED_82) return
-
-        if (YukiHook.Config.hookSharedPreferences) ContextImplClass.resolve()
-            .processor(resolver)
-            .optional(silent = true)
-            .firstMethodOrNull { name = "setFilePermissionsFromMode" }?.let {
-                YukiHookHelper.hook(
-                    it, object : ClassicHookerBridge {
-                        override fun beforeHooked(param: ClassicHookerBridge.Param) {
-                            if ((param.args[0] as? String?)?.endsWith("preferences.xml") == true) param.args[1] = 1
-                        }
-                    }
-                )
-            }
-        YukiHookBridge.installLegacyModuleStatusHooks(loader)
-    }
 
     /**
      * Registers lifecycle callbacks for the first [Application] in this process.

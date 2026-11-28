@@ -23,8 +23,12 @@ package com.highcapable.yukihookapi.runtime.xposed82
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.highcapable.kavaref.KavaRef.Companion.resolve
+import com.highcapable.kavaref.extension.toClassOrNull
 import com.highcapable.yukihookapi.runtime.YukiHookBridge
 import com.highcapable.yukihookapi.runtime.bridge.PreferencesBridge
+import com.highcapable.yukihookapi.runtime.bridge.hooker.ClassicHookerBridge
+import com.highcapable.yukihookapi.runtime.bridge.hooker.HookPoint
 import de.robv.android.xposed.XSharedPreferences
 
 /**
@@ -33,6 +37,25 @@ import de.robv.android.xposed.XSharedPreferences
 internal object Xposed82Preferences {
 
     fun open(hostEnvironment: Boolean) = if (hostEnvironment) Host else Module
+
+    /** Forces files ending in `preferences.xml` written by the module to use world-readable permissions. */
+    fun installHooks() {
+        val method = "android.app.ContextImpl".toClassOrNull()
+            ?.resolve()
+            ?.optional(silent = true)
+            ?.firstMethodOrNull {
+                name = "setFilePermissionsFromMode"
+                parameters(String::class, Int::class, Int::class)
+            }?.self ?: return
+
+        val registration = YukiHookBridge.hookRegistration
+        registration.hook(HookPoint.Executable(method), registration.defaultPriority, object : ClassicHookerBridge {
+            override fun beforeHooked(param: ClassicHookerBridge.Param) {
+                @Suppress("DEPRECATION", "WorldReadableFiles")
+                if ((param.args[0] as? String)?.endsWith("preferences.xml") == true) param.args[1] = Context.MODE_WORLD_READABLE
+            }
+        })
+    }
 
     private object Module : PreferencesBridge {
 

@@ -47,6 +47,8 @@ import com.highcapable.yukihookapi.hook.xposed.bridge.type.HookEntryType
 import com.highcapable.yukihookapi.hook.xposed.channel.YukiHookDataChannel
 import com.highcapable.yukihookapi.hook.xposed.parasitic.AppParasitism
 import com.highcapable.yukihookapi.runtime.YukiHookBridge
+import com.highcapable.yukihookapi.runtime.YukiHookRuntime
+import com.highcapable.yukihookapi.runtime.bridge.FrameworkHookBridge
 import com.highcapable.yukihookapi.runtime.bridge.HookRegistrationBridge
 import com.highcapable.yukihookapi.runtime.bridge.session.ModuleSessionBridge
 import kotlin.reflect.KType
@@ -325,6 +327,15 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
     private fun dispatchPackage(context: PackageContext) {
         if (!packageRegistration.record(context)) return
 
+        val isLegacyModule = context.type != HookEntryType.ZYGOTE && context.packageName == modulePackageName &&
+            YukiHookBridge.runtime == YukiHookRuntime.XPOSED_82
+        if (isLegacyModule) runCatching {
+            YukiHookBridge.installLegacyModuleHooks(FrameworkHookBridge.LegacyModuleHook.STATUS, context.classLoader)
+        }.onFailure {
+            events.reportFailure(it)
+            YLog.error("Failed to install legacy module activation status hooks", it)
+        }
+
         runCatching {
             val callback = {
                 context.declare { packageParamCallback?.invoke(PackageParam(context).apply { YukiHook.sayHello() }) }
@@ -332,8 +343,8 @@ internal object XposedModuleRuntime : XposedModuleLifecycle {
             val component = hookRegistration
             if (component == null) callback() else component.withEntry(context.id, callback)
 
-            if (context.type != HookEntryType.ZYGOTE && context.packageName == modulePackageName)
-                AppParasitism.hookLegacyModuleRelated(context.classLoader)
+            if (isLegacyModule && YukiHook.Config.hookSharedPreferences)
+                YukiHookBridge.installLegacyModuleHooks(FrameworkHookBridge.LegacyModuleHook.SHARED_PREFERENCES, context.classLoader)
             if (context.isFirstApplication) AppParasitism.prepareHostApplication(context.packageName, context.type)
         }.onFailure {
             events.reportFailure(it)

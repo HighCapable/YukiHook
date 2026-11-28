@@ -76,7 +76,7 @@ internal object YukiHookBridge : FrameworkHookBridge {
     }
 
     override fun initializeModuleServices() = LibXposedService.initialize()
-    override fun installLegacyModuleStatusHooks(loader: ClassLoader?) = Unit
+    override fun installLegacyModuleHooks(hook: FrameworkHookBridge.LegacyModuleHook, loader: ClassLoader?) = Unit
 
     override fun observeService(lifecycle: Lifecycle?, listener: FrameworkServiceBridge) = LibXposedService.observe(lifecycle, listener)
 

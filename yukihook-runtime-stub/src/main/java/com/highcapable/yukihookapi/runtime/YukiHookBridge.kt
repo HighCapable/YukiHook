@@ -56,7 +56,7 @@ object YukiHookBridge : FrameworkHookBridge {
     override val hookRegistration: HookRegistrationBridge get() = error("Stub!")
 
     override fun initializeModuleServices(): Unit = error("Stub!")
-    override fun installLegacyModuleStatusHooks(loader: ClassLoader?): Unit = error("Stub!")
+    override fun installLegacyModuleHooks(hook: FrameworkHookBridge.LegacyModuleHook, loader: ClassLoader?): Unit = error("Stub!")
     override fun observeService(lifecycle: Lifecycle?, listener: FrameworkServiceBridge): FrameworkServiceBridge? = error("Stub!")
     override fun preferences(hostEnvironment: Boolean): PreferencesBridge = error("Stub!")
     override fun sharedFiles(hostEnvironment: Boolean): SharedFilesBridge = error("Stub!")

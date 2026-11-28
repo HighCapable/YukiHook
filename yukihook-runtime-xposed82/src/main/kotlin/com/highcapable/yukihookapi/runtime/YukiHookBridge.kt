@@ -67,7 +67,11 @@ internal object YukiHookBridge : FrameworkHookBridge {
     }
 
     override fun initializeModuleServices() = Unit
-    override fun installLegacyModuleStatusHooks(loader: ClassLoader?) = Xposed82ModuleStatus.install(loader)
+
+    override fun installLegacyModuleHooks(hook: FrameworkHookBridge.LegacyModuleHook, loader: ClassLoader?) = when (hook) {
+        FrameworkHookBridge.LegacyModuleHook.STATUS -> Xposed82ModuleStatus.install(loader)
+        FrameworkHookBridge.LegacyModuleHook.SHARED_PREFERENCES -> Xposed82Preferences.installHooks()
+    }
 
     override fun observeService(lifecycle: Lifecycle?, listener: FrameworkServiceBridge): FrameworkServiceBridge? =
         throw UnsupportedOperationException("Framework service is unavailable in Xposed Framework API.")
