@@ -21,6 +21,7 @@
  */
 package com.highcapable.yukihookapi.hook.xposed.channel
 
+import android.app.BroadcastOptions
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -49,6 +50,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleCallback
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
+import com.highcapable.betterandroid.system.extension.utils.AndroidVersion
 import com.highcapable.yukihookapi.hook.factory.dataChannel
 import com.highcapable.yukihookapi.hook.xposed.channel.data.ChannelData
 import com.highcapable.yukihookapi.hook.xposed.channel.priority.ChannelPriority
@@ -68,12 +70,12 @@ import java.util.concurrent.TimeUnit
 class YukiHookDataChannelTest {
 
     private companion object {
-        const val HOST = "com.example.host"
         const val OTHER_HOST = "com.example.otherhost"
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val application = instrumentation.targetContext.applicationContext
+    private val hostPackageName = application.packageName
 
     @Test
     fun routesToTheResumedInstanceAndReplacesItsDuplicateListener() {
@@ -83,23 +85,25 @@ class YukiHookDataChannelTest {
         ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
             val second = awaitFragmentActivityResume {
                 scenario.onActivity { first ->
-                    first.dataChannel(HOST).wait<String>(key) { received += "replaced:$it" }
-                    ContextWrapper(first).dataChannel(HOST).wait<String>(key) { received += "first:$it" }
+                    first.dataChannel(hostPackageName).wait<String>(key) { received += "replaced:$it" }
+                    ContextWrapper(first).dataChannel(hostPackageName).wait<String>(key) { received += "first:$it" }
                     first.dataChannel(OTHER_HOST).wait<String>(key) { received += "other:$it" }
                     first.startActivity(Intent(first, FragmentActivity::class.java))
                 }
             }
             try {
                 instrumentation.runOnMainSync {
-                    second.dataChannel(HOST).wait<String>(key) { received += "second:$it" }
+                    second.dataChannel(hostPackageName).wait<String>(key) { received += "second:$it" }
                 }
 
-                broadcast { it.dataChannel(HOST).put(key, "visible") }
+                broadcast { it.dataChannel(hostPackageName).put(key, "visible") }
                 awaitFragmentActivityResume { instrumentation.runOnMainSync { second.finish() } }
-                broadcast { it.dataChannel(HOST).put(key, "back") }
+                broadcast { it.dataChannel(hostPackageName).put(key, "back") }
                 broadcast { it.dataChannel(OTHER_HOST).put(key, "isolated") }
 
-                Assert.assertEquals(listOf("second:visible", "first:back", "other:isolated"), received)
+                val expected = if (AndroidVersion.isAtLeast(AndroidVersion.U)) listOf("second:visible", "first:back")
+                else listOf("second:visible", "first:back", "other:isolated")
+                Assert.assertEquals(expected, received)
             } finally {
                 instrumentation.runOnMainSync { second.finish() }
             }
@@ -142,8 +146,8 @@ class YukiHookDataChannelTest {
         val received = mutableListOf<List<String>>()
 
         ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
-            scenario.onActivity { it.dataChannel(HOST).wait<List<String>>(key) { value -> received += value } }
-            val outgoing = captureBroadcast { it.dataChannel(HOST).put(key, payload) }
+            scenario.onActivity { it.dataChannel(hostPackageName).wait<List<String>>(key) { value -> received += value } }
+            val outgoing = captureBroadcast { it.dataChannel(hostPackageName).put(key, payload) }
             payload[0] = "changed after sending"
 
             deliverBroadcast(outgoing)
@@ -162,13 +166,13 @@ class YukiHookDataChannelTest {
 
         ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
             scenario.onActivity {
-                it.dataChannel(HOST).wait<TransportPayload>(key) { value ->
+                it.dataChannel(hostPackageName).wait<TransportPayload>(key) { value ->
                     received += value.text
                     binders += value.binder
                     value.text = "changed by listener"
                 }
             }
-            val outgoing = captureBroadcast { it.dataChannel(HOST).put(key, payload) }
+            val outgoing = captureBroadcast { it.dataChannel(hostPackageName).put(key, payload) }
             payload.text = "changed after sending"
 
             deliverBroadcast(outgoing)
@@ -187,7 +191,7 @@ class YukiHookDataChannelTest {
 
         ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
-                activity.dataChannel(HOST).wait(data) { received += it }
+                activity.dataChannel(hostPackageName).wait(data) { received += it }
                 activity.lifecycle.addObserver(LifecycleEventObserver { _, event ->
                     if (event == Lifecycle.Event.ON_STOP) stopped.countDown()
                 })
@@ -195,7 +199,7 @@ class YukiHookDataChannelTest {
             }
             Assert.assertTrue("The module activity did not stop", stopped.await(5, TimeUnit.SECONDS))
 
-            broadcast { it.dataChannel(HOST).put(data, "from host") }
+            broadcast { it.dataChannel(hostPackageName).put(data, "from host") }
 
             Assert.assertEquals(listOf("from host"), received)
         }
@@ -213,18 +217,18 @@ class YukiHookDataChannelTest {
 
             override fun onBind(intent: Intent?) = null
         }
-        service.dataChannel(HOST).wait(data) { received += "service:$it" }
+        service.dataChannel(hostPackageName).wait(data) { received += "service:$it" }
 
         ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
-            scenario.onActivity { it.dataChannel(HOST).wait(data) { value -> received += "before:$value" } }
+            scenario.onActivity { it.dataChannel(hostPackageName).wait(data) { value -> received += "before:$value" } }
 
             scenario.moveToState(Lifecycle.State.STARTED)
-            broadcast { it.dataChannel(HOST).put(data, "paused") }
+            broadcast { it.dataChannel(hostPackageName).put(data, "paused") }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            broadcast { it.dataChannel(HOST).put(data, "resumed") }
+            broadcast { it.dataChannel(hostPackageName).put(data, "resumed") }
             scenario.recreate()
-            scenario.onActivity { it.dataChannel(HOST).wait(data) { value -> received += "after:$value" } }
-            broadcast { it.dataChannel(HOST).put(data, "recreated") }
+            scenario.onActivity { it.dataChannel(hostPackageName).wait(data) { value -> received += "after:$value" } }
+            broadcast { it.dataChannel(hostPackageName).put(data, "recreated") }
 
             Assert.assertEquals(
                 listOf("service:paused", "service:resumed", "before:resumed", "service:recreated", "after:recreated").sorted(),
@@ -241,7 +245,7 @@ class YukiHookDataChannelTest {
         ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
             scenario.onActivity {
                 it.supportFragmentManager.beginTransaction().add(fragment, "thread-check").commitNow()
-                channel = fragment.dataChannel(HOST)
+                channel = fragment.dataChannel(hostPackageName)
             }
 
             Assert.assertThrows(IllegalStateException::class.java) { channel.wait("thread-check") {} }
@@ -253,14 +257,14 @@ class YukiHookDataChannelTest {
         val key = UUID.randomUUID().toString()
         val received = mutableListOf<String>()
         var allowSecond = true
-        val first = ListeningFragment().apply { register = { dataChannel(HOST).wait(key) { received += "first" } } }
+        val first = ListeningFragment().apply { register = { dataChannel(hostPackageName).wait(key) { received += "first" } } }
         val second = ListeningFragment().apply {
-            register = { dataChannel(HOST).wait(key, ChannelPriority { allowSecond }) { received += "second" } }
+            register = { dataChannel(hostPackageName).wait(key, ChannelPriority { allowSecond }) { received += "second" } }
         }
 
         ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
             scenario.onActivity { it.supportFragmentManager.beginTransaction().add(first, "first").add(second, "second").commitNow() }
-            broadcast { it.dataChannel(HOST).put(key) }
+            broadcast { it.dataChannel(hostPackageName).put(key) }
             Assert.assertEquals(listOf("first", "second"), received.sorted())
             received.clear()
 
@@ -268,14 +272,14 @@ class YukiHookDataChannelTest {
                 it.supportFragmentManager.beginTransaction().detach(first).commitNow()
                 allowSecond = false
             }
-            broadcast { it.dataChannel(HOST).put(key) }
+            broadcast { it.dataChannel(hostPackageName).put(key) }
             Assert.assertTrue(received.isEmpty())
 
             scenario.onActivity {
                 allowSecond = true
                 it.supportFragmentManager.beginTransaction().attach(first).commitNow()
             }
-            broadcast { it.dataChannel(HOST).put(key) }
+            broadcast { it.dataChannel(hostPackageName).put(key) }
             Assert.assertEquals(listOf("first", "second"), received.sorted())
         }
     }
@@ -301,10 +305,10 @@ class YukiHookDataChannelTest {
                 val tasks = setOf(firstTask, secondTask)
                 val activities = awaitSplitScreenActivities(tasks)
                 instrumentation.runOnMainSync {
-                    activities.forEach { activity -> activity.dataChannel(HOST).wait(key) { received += activity.taskId } }
+                    activities.forEach { activity -> activity.dataChannel(hostPackageName).wait(key) { received += activity.taskId } }
                 }
 
-                broadcast { it.dataChannel(HOST).put(key) }
+                broadcast { it.dataChannel(hostPackageName).put(key) }
 
                 Assert.assertEquals(tasks.sorted(), received.sorted())
             } finally {
@@ -400,11 +404,15 @@ class YukiHookDataChannelTest {
         val reply = Intent(intent).setAction("yuki_hook_module_data_channel_${application.packageName.hashCode()}")
             .setPackage(application.packageName)
         // Keep the payload from put and route it back through Android's broadcast receiver.
-        application.sendOrderedBroadcast(reply, null, object : BroadcastReceiver() {
+        val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 delivered.countDown()
             }
-        }, null, 0, null, null)
+        }
+        if (AndroidVersion.isAtLeast(AndroidVersion.U)) application.sendOrderedBroadcast(
+            reply, null, BroadcastOptions.makeBasic().setShareIdentityEnabled(true).toBundle(), receiver, null, 0, null, null
+        )
+        else application.sendOrderedBroadcast(reply, null, receiver, null, 0, null, null)
         Assert.assertTrue("The data channel broadcast did not finish", delivered.await(5, TimeUnit.SECONDS))
     }
 

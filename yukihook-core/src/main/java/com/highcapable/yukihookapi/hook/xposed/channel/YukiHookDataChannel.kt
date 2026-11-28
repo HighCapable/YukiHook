@@ -24,6 +24,7 @@
 package com.highcapable.yukihookapi.hook.xposed.channel
 
 import android.app.Application
+import android.app.BroadcastOptions
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -40,6 +41,7 @@ import com.highcapable.betterandroid.system.extension.component.BroadcastReceive
 import com.highcapable.betterandroid.system.extension.component.getParcelableCompat
 import com.highcapable.betterandroid.system.extension.component.registerReceiver
 import com.highcapable.betterandroid.system.extension.component.sendBroadcast
+import com.highcapable.betterandroid.system.extension.utils.AndroidVersion
 import com.highcapable.kavaref.extension.classOf
 import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.hook.core.internal.utils.RandomString
@@ -69,6 +71,8 @@ import java.util.concurrent.ConcurrentHashMap
  * The module's [Application] must inherit [ModuleApplication] to use this feature.
  *
  * - Note: Requires both the module and host to remain alive.
+ *   Sender identity is verified only on Android 14 and above. On older systems,
+ *   do not use channel messages alone to authorize sensitive operations or disclose sensitive data.
  */
 class YukiHookDataChannel private constructor() {
 
@@ -145,9 +149,19 @@ class YukiHookDataChannel private constructor() {
 
     /** The broadcast receiver callback. */
     private val handlerReceiverCallback = BroadcastReceiver { context, intent ->
-        // LoadedApk puts the module loader on the shared Intent before dispatch.
+        val senderPackage = AndroidVersion.requireOrNull(AndroidVersion.U, null) {
+            val packageName = sentFromPackage ?: return@BroadcastReceiver
+            val uid = sentFromUid
+            if (uid < 0 || runCatching { context.packageManager.getPackageUid(packageName, 0) }.getOrNull() != uid)
+                return@BroadcastReceiver
+            if (isHostEnvironment && packageName != XposedModuleRuntime.modulePackageName) return@BroadcastReceiver
+
+            packageName
+        }
+
+        // LoadedApk puts the module loader on the shared `Intent` before dispatch.
         intent.setExtrasClassLoader(context.classLoader)
-        events.dispatch { intent.action?.let { channelLifecycle.dispatch(it, intent) } }
+        events.dispatch { intent.action?.let { channelLifecycle.dispatch(it, intent, senderPackage) } }
     }
 
     /** Checks the API loading state. */
@@ -197,14 +211,18 @@ class YukiHookDataChannel private constructor() {
                 channelLifecycle.register(
                     application, packageName, null,
                     GET_MODULE_GENERATED_VERSION, ChannelLifecycle.Kind.VALUE
-                ) receive@{ action, intent ->
+                ) receive@{ action, intent, senderPackage ->
                     if (action != moduleActionName(application)) return@receive
 
-                    // The host namespace is part of the request key, so decode it before choosing the reply namespace.
+                    // Older systems cannot identify the sender, so use the host namespace carried by the request.
                     val extras = intent.extras?.parcelledCopy(ModuleClassLoader.get()) ?: return@receive
-                    extras.keySet().filter { it.startsWith("${GET_MODULE_GENERATED_VERSION}_") }.forEach { key ->
+                    extras.keySet().filter {
+                        if (senderPackage != null) it == "${GET_MODULE_GENERATED_VERSION}_${senderPackage.hashCode()}"
+                        else it.startsWith("${GET_MODULE_GENERATED_VERSION}_")
+                    }.forEach { key ->
                         val request = runCatching { extras.getParcelableCompat<ChannelDataWrapper<*>>(key) }.getOrNull()
                         val host = request?.instance?.value as? String ?: return@forEach
+                        if (senderPackage != null && host != senderPackage) return@forEach
                         if (request.instance.key == GET_MODULE_GENERATED_VERSION && key == "${GET_MODULE_GENERATED_VERSION}_${host.hashCode()}")
                             namespace(application, host).put(RESULT_MODULE_GENERATED_VERSION, moduleGeneratedVersion)
                     }
@@ -214,12 +232,12 @@ class YukiHookDataChannel private constructor() {
 
             namespace(application, packageName).with {
                 // Registers a listener that checks whether module and host versions match.
-                wait<String>(GET_MODULE_GENERATED_VERSION) { fromPackageName ->
-                    namespace(application, fromPackageName).put(RESULT_MODULE_GENERATED_VERSION, moduleGeneratedVersion)
+                wait<String>(GET_MODULE_GENERATED_VERSION) {
+                    put(RESULT_MODULE_GENERATED_VERSION, moduleGeneratedVersion)
                 }
                 // Registers a listener for debug log data exchanged between the module and host.
-                wait<String>(GET_YUKI_LOGGER_IN_MEMORY_DATA) { fromPackageName ->
-                    namespace(application, fromPackageName).put(loggerInMemoryDataResult, YLog.createSnapshot())
+                wait<String>(GET_YUKI_LOGGER_IN_MEMORY_DATA) {
+                    put(loggerInMemoryDataResult, YLog.createSnapshot())
                 }
             }
         }.onFailure { failure ->
@@ -511,7 +529,8 @@ class YukiHookDataChannel private constructor() {
          * @param receive the result-data callback.
          */
         private fun register(key: String, kind: ChannelLifecycle.Kind, priority: ChannelPriority?, receive: (Intent) -> Unit) {
-            channelLifecycle.register(context, packageName, lifecycle, key, kind) { action, intent ->
+            channelLifecycle.register(context, packageName, lifecycle, key, kind) { action, intent, senderPackage ->
+                if (!isHostEnvironment && senderPackage != null && senderPackage != packageName) return@register
                 if (priority?.result == false) return@register
 
                 val expectedAction = if (isHostEnvironment) hostActionName(packageName) else moduleActionName(context)
@@ -786,7 +805,10 @@ class YukiHookDataChannel private constructor() {
          * @param wrapper the key-value data wrapper.
          */
         private fun sendBroadcast(wrapper: ChannelDataWrapper<*>) {
-            (context ?: AppParasitism.currentApplication)?.sendBroadcast {
+            val options = AndroidVersion.requireOrNull(AndroidVersion.U, null) {
+                BroadcastOptions.makeBasic().setShareIdentityEnabled(true).toBundle()
+            }
+            (context ?: AppParasitism.currentApplication)?.sendBroadcast(options = options) {
                 action = if (isHostEnvironment) moduleActionName() else hostActionName(packageName)
                 setPackage(if (isHostEnvironment) XposedModuleRuntime.modulePackageName else packageName)
                 putExtra(wrapper.instance.key + keyNonRepeatName, wrapper)

@@ -68,7 +68,7 @@ internal class ChannelLifecycle(private val isHost: Boolean) : Application.Activ
         }
     }
 
-    private class Listener(val activity: Activity?, val receive: (String, Intent) -> Unit) {
+    private class Listener(val activity: Activity?, val receive: (String, Intent, String?) -> Unit) {
         var observer: LifecycleEventObserver? = null
     }
 
@@ -84,7 +84,7 @@ internal class ChannelLifecycle(private val isHost: Boolean) : Application.Activ
      * @param lifecycle the lifecycle to bind the listener to, or null if not needed.
      * @param name the name of the listener.
      * @param kind the kind of listener.
-     * @param receive the function to call when a broadcast is received.
+     * @param receive the callback receiving the action, intent and verified sender package, which is null on older systems.
      */
     fun register(
         context: Context?,
@@ -92,7 +92,7 @@ internal class ChannelLifecycle(private val isHost: Boolean) : Application.Activ
         lifecycle: Lifecycle?,
         name: String,
         kind: Kind,
-        receive: (String, Intent) -> Unit
+        receive: (String, Intent, String?) -> Unit
     ) {
         if (lifecycle != null) {
             check(Looper.myLooper() == Looper.getMainLooper()) {
@@ -122,15 +122,16 @@ internal class ChannelLifecycle(private val isHost: Boolean) : Application.Activ
      * Delivers the broadcast to eligible listeners and handles failures according to the process.
      * @param action the action of the broadcast.
      * @param intent the intent of the broadcast.
+     * @param senderPackage the verified sender package, or null on systems without sender identity support.
      */
-    fun dispatch(action: String, intent: Intent) {
+    fun dispatch(action: String, intent: Intent, senderPackage: String?) {
         var failure: Throwable? = null
         listeners.forEach { (key, listener) ->
             runCatching {
                 val activity = listener.activity
                 when {
                     activity?.isDestroyed == true || key.lifecycle?.currentState == Lifecycle.State.DESTROYED -> remove(key, listener)
-                    activity == null || isHost || lastResumedByTask.values.any { it === activity } -> listener.receive(action, intent)
+                    activity == null || isHost || lastResumedByTask.values.any { it === activity } -> listener.receive(action, intent, senderPackage)
                 }
             }.onFailure {
                 // One failing listener must not stop the others. Module listener failures must not crash the host.
